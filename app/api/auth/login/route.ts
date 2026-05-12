@@ -1,28 +1,12 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
+
 import { loginSchema } from "@/modules/auth/schemas/login.schema";
 import { loginUser } from "@/modules/auth/services/auth.service";
 
 export async function POST(req: Request) {
     try {
-        const contentType = req.headers.get("content-type");
-        console.log("Request headers - Content-Type:", contentType);
-        console.log("Request method:", req.method);
-        
-        let body;
-        try {
-            body = await req.json();
-        } catch (parseError) {
-            console.error("JSON parse error:", parseError);
-            console.error("Content-Type:", contentType);
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "Invalid JSON in request body",
-                    details: (parseError as Error).message,
-                },
-                { status: 400 }
-            );
-        }
+        const body = await req.json();
 
         const validatedData =
         loginSchema.parse(body);
@@ -46,13 +30,48 @@ export async function POST(req: Request) {
 
         return response;
     } catch (error) {
-        console.error("Login error:", error);
+        if (error instanceof SyntaxError) {
+        return NextResponse.json(
+            {
+            success: false,
+            error: "Invalid JSON",
+            },
+            { status: 400 }
+        );
+        }
+
+        if (error instanceof ZodError) {
+        return NextResponse.json(
+            {
+            success: false,
+            error: error.flatten(),
+            },
+            { status: 400 }
+        );
+        }
+
+        if (
+        error instanceof Error &&
+        error.message ===
+            "Invalid credentials"
+        ) {
+        return NextResponse.json(
+            {
+            success: false,
+            error: error.message,
+            },
+            { status: 401 }
+        );
+        }
+
+        console.error(error);
+
         return NextResponse.json(
         {
             success: false,
-            error: error instanceof Error ? error.message : "Invalid credentials",
+            error: "Internal server error",
         },
-        { status: 401 }
+        { status: 500 }
         );
     }
 }
