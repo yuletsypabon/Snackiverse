@@ -23,12 +23,14 @@ export async function loginUser(
     );
 
     console.log("PASSWORD VALID:", isValidPassword);
+    console.log("LOGIN ATTEMPT");
+    console.log("USER:", user);
 
     if (!isValidPassword) {
         throw new Error("Invalid credentials");
     }
 
-    const token = generateToken({
+    const token = await generateToken({
         userId: user.id,
         role: user.role,
     });

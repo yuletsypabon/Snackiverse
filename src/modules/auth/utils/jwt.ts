@@ -1,13 +1,34 @@
-import jwt from "jsonwebtoken";
+import { SignJWT, jwtVerify } from "jose";
 
-const JWT_SECRET = process.env.JWT_SECRET!; 
+type TokenPayload = {
+    userId: string;
+    role: string;
+};
 
-export function generateToken(payload: object) {
-    return jwt.sign(payload, JWT_SECRET, {
-        expiresIn: "7d",
-    });
-}
+function getJwtSecret() {
+    const secret = process.env.JWT_SECRET;
 
-export function verifyToken(token: string) {
-    return jwt.verify(token, JWT_SECRET);
+    if (!secret) {
+        throw new Error("JWT_SECRET is not configured");
+    }
+
+    return new TextEncoder().encode(secret);
+    }
+
+    export async function generateToken(payload: TokenPayload) {
+    return new SignJWT(payload)
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("7d")
+        .sign(getJwtSecret());
+    }
+
+    export async function verifyToken(token: string) {
+    try {
+        const { payload } = await jwtVerify(token, getJwtSecret());
+
+        return payload;
+    } catch {
+        return null;
+    }
 }
