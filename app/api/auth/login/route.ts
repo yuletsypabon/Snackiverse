@@ -13,7 +13,8 @@ export async function POST(req: Request) {
 
         const result = await loginUser(
         validatedData.email,
-        validatedData.password
+        validatedData.password,
+        validatedData.role
         );
 
         const response = NextResponse.json({
@@ -30,11 +31,11 @@ export async function POST(req: Request) {
 
         return response;
     } catch (error) {
-        if (error instanceof SyntaxError) {
+        if (error instanceof Error && error.message === "Invalid role") {
         return NextResponse.json(
             {
             success: false,
-            error: "Invalid JSON",
+            error: "El usuario no tiene permisos para ingresar con ese rol",
             },
             { status: 400 }
         );

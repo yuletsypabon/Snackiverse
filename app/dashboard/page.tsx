@@ -1,3 +1,5 @@
+import { LogoutButton } from "@/modules/auth/components/logout-button";
+
 const stats = [
     {
         label: "VENTAS HOY",
@@ -36,6 +38,7 @@ const stats = [
     { icon: "📋", label: "Centro de Informes" },
     { icon: "👥", label: "Vendedores" },
     { icon: "🛡️", label: "Permisos" },
+    
     ];
 
     function formatDashboardDate() {
@@ -54,9 +57,7 @@ const stats = [
             <aside className="border-r border-slate-950 bg-[#2d4254] text-white shadow-xl lg:min-h-screen">
             <div className="flex h-full flex-col">
                 <div className="flex h-[102px] items-center gap-3 border-b border-slate-950 bg-[#17232d] px-4">
-                <div className="grid h-12 w-9 place-items-center rounded border border-white/80 bg-white text-2xl shadow-sm">
-                    🌶️
-                </div>
+                
 
                 <div className="text-xl font-black tracking-tight [text-shadow:2px_2px_0_#001a2c]">
                     Snackie<span className="text-emerald-400">Verse</span>
@@ -72,19 +73,19 @@ const stats = [
                     </span>
                 </div>
 
-                <button className="text-sm font-extrabold text-red-400 hover:text-red-300">
-                    ← Salir
-                </button>
+                
                 </div>
-
                 <nav className="py-2 text-[15px] font-bold">
                 {navigation.map((item) => (
+                    
                     <div key={item.label}>
                     {item.section && (
                         <div className="px-4 pb-2 pt-4 text-xs font-black tracking-[0.18em] text-slate-400">
                         {item.section}
                         </div>
+                    
                     )}
+                    
 
                     <a
                         href="#"
@@ -100,6 +101,9 @@ const stats = [
                     </div>
                 ))}
                 </nav>
+                <div className="border-t border-white/10 px-5 pt-3">
+                    <LogoutButton />
+                </div>
             </div>
             </aside>
 

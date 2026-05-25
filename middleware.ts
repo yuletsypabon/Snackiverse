@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/modules/auth/utils/jwt";
 
+const adminOnlyRoutes = [
+    "/dashboard",
+    "/students",
+    "/reports",
+    "/users",
+];
+
+
 const protectedRoutes = [
     "/dashboard",
     "/students",
     "/sales",
     "/reports",
+    "/users",
 ];
 
 export async function middleware(req: NextRequest ) {
@@ -34,6 +43,12 @@ export async function middleware(req: NextRequest ) {
         );
     }
 
+    if (adminOnlyRoutes.some((route) => pathname.startsWith(route)) && 
+        verified.role !== "admin"
+    ) {
+    return NextResponse.redirect(new URL("/sales", req.url));
+    }
+
     return NextResponse.next();
 }
 
@@ -43,5 +58,6 @@ export const config = {
         "/students/:path*",
         "/sales/:path*",
         "/reports/:path*",
+        "/users/:path*",
     ],
 };
