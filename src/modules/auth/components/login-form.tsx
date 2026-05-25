@@ -2,6 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  InputAdornment,
+  Stack,
+  TextField,
+  Typography,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@mui/material";
 
 export function LoginForm() {
   const router = useRouter();
@@ -43,74 +60,310 @@ export function LoginForm() {
   };
 
   return (
-  <section className="grid w-full max-w-[1030px] overflow-hidden rounded-[28px] bg-white shadow-2xl shadow-black/30 lg:min-h-[558px] lg:grid-cols-[1.08fr_0.92fr]">
-    <aside className="bg-gradient-to-br from-[#073818] via-[#17632f] to-[#25a957] px-8 py-10 text-white">
-      <div className="flex min-h-full flex-col items-center justify-center gap-8">
-        <div className="grid h-48 w-64 place-items-center bg-white p-4 shadow-xl">
-          <div className="text-center font-black leading-[0.82]">
+    <Box
+      sx={{
+        display: "grid",
+        width: "100%",
+        maxWidth: "1030px",
+        overflow: "hidden",
+        borderRadius: "28px",
+        bgcolor: "white",
+        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+        gridTemplateColumns: { xs: "1fr", lg: "1.08fr 0.92fr" },
+        minHeight: { xs: "auto", lg: "558px" },
+      }}
+    >
+      {/* Sidebar izquierdo - Selección de rol */}
+      <Box
+        sx={{
+          background: "linear-gradient(135deg, #073818 0%, #17632f 50%, #25a957 100%)",
+          px: { xs: 3, sm: 4 },
+          py: 5,
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Stack
+          spacing={4}
+          sx={{
+            width: "100%",
+            minHeight: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {/* Logo */}
+          <Box
+            sx={{
+              display: "grid",
+              placeItems: "center",
+              width: "100%",
+              maxWidth: 360,
+                height: "100%",
+            }}
+          >
+            <Image
+              src="/logo/adminpanel.png"
+              alt="Snackie Verse Logo"
+              width={340}
+              height={260}
+              priority
+              style={{ objectFit: "contain" }}
+            />
+          </Box>
+
+          {/* Descripción */}
+          <Typography
+            sx={{
+              width: "80%",
+              maxWidth: 300,
+              textAlign: "center",
+              alignSelf: "center",
+              fontSize: 12,
+              fontWeight: 600,
+              height: "100%",
+              textTransform: "uppercase",
+              color: "#d1d5db",
+              fontStyle: "Bold Condensed Italic",
+            }}
+          >
+            Sistema de gestión de cafetería escolar
+          </Typography>
+
+          {/* Botones de selección de rol */}
+          
+        </Stack>
+      </Box>
+
+      {/* Lado derecho - Formulario de login */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          px: { xs: 3, sm: 4 },
+          py: 5,
+        }}
+      >
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ width: "100%", maxWidth: "360px" }}
+        >
+          {/* Título */}
+          <Box sx={{ mb: 4.5, textAlign: "center" }}>
+            <Typography
+              sx={{
+                fontSize: "11px",
+                fontWeight: 500,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "#5f6f7d",
+              }}
+            >
+              Bienvenido
+            </Typography>
+            <Typography
+              sx={{
+                mt: 1.5,
+                fontSize: 32,
+                fontWeight: 900,
+              }}
+            >
+              Iniciar sesión
+            </Typography>
+          </Box>
+
+          {/* Selector de rol */}
+          <ToggleButtonGroup
+            value={role}
+            exclusive
+            onChange={(event, newRole) => {
+              if (newRole) setRole(newRole);
+            }}
+            fullWidth
+            sx={{
+              mb: 3,
+              bgcolor: "#f1f5f9",
+              borderRadius: "12px",
+              p: "4px",
+              "& .MuiToggleButton-root": {
+                textTransform: "none",
+                fontWeight: 900,
+                fontSize: "14px",
+                borderRadius: "10px",
+                border: "none",
+                color: "#5f6f7d",
+                "&.Mui-selected": {
+                  bgcolor: "white",
+                  color: "#0a2540",
+                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                  "&:hover": {
+                    bgcolor: "white",
+                  },
+                },
+              },
+            }}
+          >
+            <ToggleButton value="admin" sx={{ flex: 1, gap: 1, display: "flex", alignItems: "center" }}>
+              <AdminPanelSettingsOutlinedIcon sx={{ fontSize: 20 }} />
+              Admin
+            </ToggleButton>
+            <ToggleButton value="vendor" sx={{ flex: 1, gap: 1, display: "flex", alignItems: "center" }}>
+              <ShoppingCartOutlinedIcon sx={{ fontSize: 20 }} />
+              Vendedor
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          {/* Input Email */}
+          <TextField
+            type="email"
+            placeholder="Usuario"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            fullWidth
+            required
+            variant="outlined"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailOutlinedIcon sx={{ color: "#94a3b8", mr: 1 }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{
+              mb: 2,
+              "& .MuiOutlinedInput-root": {
+                height: "54px",
+                borderRadius: "12px",
+                "& fieldset": {
+                  borderColor: "#cbd5e1",
+                  borderWidth: "2px",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#cbd5e1",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#10b981",
+                  borderWidth: "2px",
+                },
+              },
+              "& .MuiOutlinedInput-input": {
+                color: "#1e293b",
+                fontSize: "16px",
+                "&::placeholder": {
+                  color: "#94a3b8",
+                  opacity: 1,
+                },
+              },
+            }}
+          />
+
+          {/* Input Contraseña */}
+          <TextField
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            fullWidth
+            required
+            variant="outlined"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockOutlinedIcon sx={{ color: "#94a3b8", mr: 1 }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{
+              mb: 2,
+              "& .MuiOutlinedInput-root": {
+                height: "54px",
+                borderRadius: "12px",
+                "& fieldset": {
+                  borderColor: "#cbd5e1",
+                  borderWidth: "2px",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#cbd5e1",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#10b981",
+                  borderWidth: "2px",
+                },
+              },
+              "& .MuiOutlinedInput-input": {
+                color: "#1e293b",
+                fontSize: "16px",
+                "&::placeholder": {
+                  color: "#94a3b8",
+                  opacity: 1,
+                },
+              },
+            }}
+          />
+
+          {/* Alert de error */}
+          {error && (
+            <Alert
+              severity="error"
+              sx={{ mb: 2, borderRadius: "12px" }}
+              onClose={() => setError("")}
+            >
+              {error}
+            </Alert>
+          )}
+
+          {/* Botón de envío */}
+          <Button
+            type="submit"
+            disabled={loading}
+            fullWidth
+            variant="contained"
+            sx={{
+              height: "56px",
+              borderRadius: "12px",
+              fontSize: 18,
+              fontWeight: 900,
+              background: "linear-gradient(90deg, #27ae60 0%, #2ecc71 100%)",
+              boxShadow: "0 10px 25px rgba(46, 204, 113, 0.3)",
+              textTransform: "none",
+              color: "white",
+              "&:disabled": {
+                opacity: 0.6,
+                background: "linear-gradient(90deg, #27ae60 0%, #2ecc71 100%)",
+              },
+              "&:hover:not(:disabled)": {
+                boxShadow: "0 15px 35px rgba(46, 204, 113, 0.4)",
+              },
+            }}
+          >
+            {loading ? (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CircularProgress size={24} sx={{ color: "white" }} />
+                Ingresando...
+              </Box>
+            ) : (
+              "Ingresar"
+            )}
+          </Button>
+
+          {/* Footer */}
+          <Box sx={{ mt: 4, textAlign: "center" }}>
             
-          </div>
-        </div>
-
-        <p className="max-w-72 text-center text-lg font-medium">
-          Sistema de gestión de cafetería escolar
-        </p>
-
-        <div className="grid w-full gap-3">
-          <button type="button" onClick={() => setRole("admin")} className="flex items-center gap-4 rounded-xl border border-white/40 bg-white/15 px-5 py-4 text-left">
-            <span className="text-2xl">👑</span>
-            <span>
-              <span className="block font-black">Administrador</span>
-              <span className="text-sm font-semibold">Acceso completo al sistema</span>
-            </span>
-          </button>
-
-          <button type="button" onClick={() => setRole("vendor")} className="flex items-center gap-4 rounded-xl border border-white/40 bg-white/15 px-5 py-4 text-left">
-            <span className="text-2xl">🛒</span>
-            <span>
-              <span className="block font-black">Vendedor</span>
-              <span className="text-sm font-semibold">Solo registro de ventas</span>
-            </span>
-          </button>
-        </div>
-      </div>
-    </aside>
-
-    <div className="flex items-center justify-center px-7 py-10">
-      <form onSubmit={handleSubmit} className="w-full max-w-[360px]">
-        <div className="mb-9 text-center">
-          <p className="text-sm font-black uppercase tracking-[0.12em] text-slate-500">Bienvenido</p>
-          <h1 className="mt-3 text-3xl font-black text-[#0a2540] [text-shadow:2px_2px_0_#9fc8ed]">
-            Iniciar sesión
-          </h1>
-        </div>
-
-        <div className="mb-6 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
-          <button type="button" onClick={() => setRole("admin")} className={`h-11 rounded-[10px] font-black ${role === "admin" ? "bg-white shadow text-[#0a2540]" : "text-slate-500"}`}>
-            Admin
-          </button>
-          <button type="button" onClick={() => setRole("vendor")} className={`h-11 rounded-[10px] font-black ${role === "vendor" ? "bg-white shadow text-[#0a2540]" : "text-slate-500"}`}>
-            Vendedor
-          </button>
-        </div>
-
-        <input type="email" placeholder="Usuario" value={email} onChange={(e) => setEmail(e.target.value)} className="mb-4 h-[54px] w-full rounded-xl border-2 border-slate-200 px-5 outline-none focus:border-emerald-400 text-slate-900 placeholder:text-slate-400" required />
-
-        <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className="mb-4 h-[54px] w-full rounded-xl border-2 border-slate-200 px-5 outline-none focus:border-emerald-400 text-slate-900 placeholder:text-slate-400" required />
-
-        {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</p>}
-
-        <button type="submit" disabled={loading} className="h-14 w-full rounded-xl bg-gradient-to-r from-[#27ae60] to-[#2ecc71] text-lg font-black text-white shadow-xl shadow-emerald-200 disabled:opacity-60">
-          {loading ? "Ingresando..." : "Ingresar →"}
-        </button>
-
-        <div className="mt-6 text-center text-sm text-slate-500">
-          <p>SnackieVerse · Cafetería Escolar</p>
-          <p className="mt-2 text-xs text-slate-400">Contacta al administrador si olvidaste tu contraseña</p>
-        </div>
-      </form>
-    </div>
-  </section>
-);  
-
+            <Typography
+              sx={{ mt: 1, fontSize: "12px", color: "#94a3b8" }}>
+              Contacta al administrador si olvidaste tu contraseña
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
 }

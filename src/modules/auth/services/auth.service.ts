@@ -7,8 +7,8 @@ import { hashPassword } from "../utils/password";
 export async function loginUser(
     email: string,
     password: string,
-    role : AuthRole
-    ) {
+    role: AuthRole
+) {
 
     const user = await prisma.user.findUnique({
         where: { email },

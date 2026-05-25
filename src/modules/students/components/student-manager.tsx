@@ -7,6 +7,8 @@ import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -132,6 +134,15 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Generar dinámicamente los filtros de grado basados en los estudiantes existentes
+    const generateGradeFilters = () => {
+        const uniqueGrades = [...new Set(students.map((student) => student.grade))];
+        const sorted = uniqueGrades.sort((a, b) => a.localeCompare(b, "es"));
+        return ["Todos", ...sorted];
+    };
+
+    const availableGradeFilters = generateGradeFilters();
 
     const filteredStudents = students.filter((student) => {
         const normalizedQuery = query.trim().toLowerCase();
@@ -275,18 +286,20 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
 
     return (
         <Stack spacing={2.5}>
-            <Typography
-                component="h1"
-                sx={{
-                    color: "#0a2540",
-                    fontSize: { xs: 28, md: 34 },
-                    fontWeight: 900,
-                    lineHeight: 1.1,
-                    textShadow: "2px 2px 0 #7eb7ed",
-                }}
-            >
-                Estudiantes 👦
-            </Typography>
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <GroupOutlinedIcon sx={{ fontSize: 34, color: "#0a2540" }} />
+                <Typography
+                    component="h1"
+                    sx={{
+                        color: "#0a2540",
+                        fontSize: { xs: 28, md: 34 },
+                        fontWeight: 900,
+                        lineHeight: 1.1,
+                    }}
+                >
+                    Estudiantes
+                </Typography>
+            </Stack>
 
             <Paper elevation={0} sx={{ p: 3 }}>
                 <Stack
@@ -328,7 +341,7 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                     useFlexGap
                     sx={{ flexWrap: "wrap", mt: 2 }}
                 >
-                    {gradeFilters.map((grade) => (
+                    {availableGradeFilters.map((grade) => (
                         <Chip
                             key={grade}
                             label={grade}
@@ -540,25 +553,15 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                                     fullWidth
                                 />
 
-                                <FormControl fullWidth>
-                                    <InputLabel id="student-grade-label">Grado</InputLabel>
-                                    <Select
-                                        labelId="student-grade-label"
-                                        label="Grado"
-                                        value={form.grade}
-                                        onChange={(event) =>
-                                            updateForm("grade", event.target.value)
-                                        }
-                                    >
-                                        {gradeFilters
-                                            .filter((grade) => grade !== "Todos")
-                                            .map((grade) => (
-                                                <MenuItem key={grade} value={grade}>
-                                                    {grade}
-                                                </MenuItem>
-                                            ))}
-                                    </Select>
-                                </FormControl>
+                                <TextField
+                                    label="Grado"
+                                    value={form.grade}
+                                    onChange={(event) =>
+                                        updateForm("grade", event.target.value)
+                                    }
+                                    placeholder="Ej: 3°, 4°, Docente"
+                                    fullWidth
+                                />
                             </Stack>
 
                             <FormControl fullWidth>
@@ -577,8 +580,12 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                                     }
                                 >
                                     {studentTypesSchema.map((type) => (
-                                        <MenuItem key={type} value={type}>
-                                            {type === "prepaid" ? "💳 " : "🧾 "}
+                                        <MenuItem key={type} value={type} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            {type === "prepaid" ? (
+                                                <CreditCardOutlinedIcon sx={{ fontSize: 18 }} />
+                                            ) : (
+                                                <ReceiptLongOutlinedIcon sx={{ fontSize: 18 }} />
+                                            )}
                                             {studentTypeLabels[type]}
                                         </MenuItem>
                                     ))}

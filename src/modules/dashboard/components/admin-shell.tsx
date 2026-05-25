@@ -17,6 +17,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Image from "next/image";
 
 import Link from "@/components/link";
 import { LogoutButton } from "@/modules/auth/components/logout-button";
@@ -80,25 +81,15 @@ export function AdminShell({ activeHref, children }: AdminShellProps) {
                         px: 2.5,
                     }}
                 >
-                    <Box
-                        sx={{
-                            bgcolor: "white",
-                            borderRadius: 1,
-                            display: "grid",
-                            fontSize: 28,
-                            height: 50,
-                            placeItems: "center",
-                            width: 38,
-                        }}
-                    >
-                        🌭
-                    </Box>
-                    <Typography sx={{ fontSize: 20, fontWeight: 900 }}>
-                        Snackie
-                        <Box component="span" sx={{ color: "#2ecc71" }}>
-                            Verse
-                        </Box>
-                    </Typography>
+                    <Image
+                        src="/logo/dashboard.png"
+                        alt="Snackie Verse Logo"
+                        width={70}
+                        height={70}
+                        priority
+                        style={{ objectFit: "contain" }}
+                    />
+                    
                 </Stack>
 
                 <Stack

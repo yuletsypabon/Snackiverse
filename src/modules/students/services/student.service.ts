@@ -6,7 +6,16 @@ import type {
     UpdateStudentInput,
 } from "../schemas/student.schema";
 
-const studentInclude = {
+const studentSelect = {
+    id: true,
+    name: true,
+    grade: true,
+    type: true,
+    balance: true,
+    isActive: true,
+    foodRestriction: true,
+    guardianWhatsapp: true,
+    createdAt: true,
     _count: {
         select: {
             sales: true,
@@ -14,10 +23,10 @@ const studentInclude = {
             payments: true,
         },
     },
-} satisfies Prisma.StudentInclude;
+} satisfies Prisma.StudentSelect;
 
 type StudentWithCounts = Prisma.StudentGetPayload<{
-    include: typeof studentInclude;
+    select: typeof studentSelect;
 }>;
 
 function normalizeOptionalText(value?: string | null) {
@@ -45,7 +54,7 @@ function toStudentDto(student: StudentWithCounts): StudentDto {
 
 export async function listStudents() {
     const students = await prisma.student.findMany({
-        include: studentInclude,
+        select: studentSelect,
         orderBy: [{ isActive: "desc" }, { name: "asc" }],
     });
 
@@ -62,7 +71,7 @@ export async function createStudent(input: CreateStudentInput) {
             foodRestriction: normalizeOptionalText(input.foodRestriction),
             guardianWhatsapp: normalizeOptionalText(input.guardianWhatsapp),
         },
-        include: studentInclude,
+        select: studentSelect,
     });
 
     return toStudentDto(student);
@@ -82,7 +91,7 @@ export async function updateStudent(id: string, input: UpdateStudentInput) {
                     ? normalizeOptionalText(input.guardianWhatsapp)
                     : undefined,
         },
-        include: studentInclude,
+        select: studentSelect,
     });
 
     return toStudentDto(student);
