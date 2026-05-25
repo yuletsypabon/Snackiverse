@@ -1,5 +1,7 @@
 "use client";
 
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import Button from "@mui/material/Button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -19,13 +21,19 @@ export function LogoutButton() {
     };
 
     return (
-        <button
-        type="button"
-        onClick={handleLogout}
-        disabled={loading}
-        className="text-sm font-extrabold text-red-400 hover:text-red-300 disabled:opacity-60"
+        <Button
+            type="button"
+            onClick={handleLogout}
+            disabled={loading}
+            color="error"
+            startIcon={<LogoutOutlinedIcon />}
+            sx={{
+                fontWeight: 900,
+                justifyContent: "flex-start",
+                px: 0,
+            }}
         >
-        {loading ? "Saliendo..." : "← Salir"}
-        </button>
+            {loading ? "Saliendo..." : "Salir"}
+        </Button>
     );
 }

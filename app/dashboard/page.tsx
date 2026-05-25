@@ -1,188 +1,189 @@
-import { LogoutButton } from "@/modules/auth/components/logout-button";
+import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
+import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import PointOfSaleOutlinedIcon from "@mui/icons-material/PointOfSaleOutlined";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
+
+import { AdminShell } from "@/modules/dashboard/components/admin-shell";
 
 const stats = [
     {
         label: "VENTAS HOY",
         value: "$0",
         detail: "Total del día",
-        className: "from-emerald-500 to-green-500 border-emerald-600",
+        icon: PointOfSaleOutlinedIcon,
+        color: "#27ae60",
     },
     {
         label: "ESTUDIANTES",
         value: "6",
         detail: "Registrados",
-        className: "from-sky-600 to-sky-500 border-sky-700",
+        icon: GroupsOutlinedIcon,
+        color: "#1f8dd6",
     },
     {
         label: "MOROSOS",
         value: "0",
         detail: "Con deuda",
-        className: "from-red-600 to-red-500 border-red-700",
+        icon: ErrorOutlineOutlinedIcon,
+        color: "#e74c3c",
     },
     {
         label: "PRODUCTOS",
         value: "12",
         detail: "Catálogo",
-        className: "from-purple-700 to-purple-500 border-purple-800",
+        icon: Inventory2OutlinedIcon,
+        color: "#7c3aed",
     },
-    ];
+];
 
-    const navigation = [
-    { icon: "🏠", label: "Inicio", active: true },
-    { icon: "🛒", label: "Registrar Venta" },
-    { icon: "🧑", label: "Estudiantes", section: "ADMINISTRACIÓN" },
-    { icon: "🍽️", label: "Productos" },
-    { icon: "💰", label: "Recargas" },
-    { icon: "💳", label: "Pagos" },
-    { icon: "📊", label: "Reportes" },
-    { icon: "📋", label: "Centro de Informes" },
-    { icon: "👥", label: "Vendedores" },
-    { icon: "🛡️", label: "Permisos" },
-    
-    ];
-
-    function formatDashboardDate() {
+function formatDashboardDate() {
     return new Intl.DateTimeFormat("es-CO", {
         weekday: "long",
         day: "numeric",
         month: "long",
         year: "numeric",
     }).format(new Date());
-    }
+}
 
-    export default function DashboardPage() {
+export default function DashboardPage() {
     return (
-        <main className="min-h-screen bg-[#edf2f8] text-slate-950">
-        <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[296px_1fr]">
-            <aside className="border-r border-slate-950 bg-[#2d4254] text-white shadow-xl lg:min-h-screen">
-            <div className="flex h-full flex-col">
-                <div className="flex h-[102px] items-center gap-3 border-b border-slate-950 bg-[#17232d] px-4">
-                
-
-                <div className="text-xl font-black tracking-tight [text-shadow:2px_2px_0_#001a2c]">
-                    Snackie<span className="text-emerald-400">Verse</span>
-                </div>
-                </div>
-
-                <div className="flex h-14 items-center justify-between border-b border-slate-950 bg-[#17232d] px-4 text-sm font-bold">
-                <div className="flex items-center gap-2">
-                    <span>👑</span>
-                    <span>Administrador</span>
-                    <span className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-emerald-50">
-                    admin
-                    </span>
-                </div>
-
-                
-                </div>
-                <nav className="py-2 text-[15px] font-bold">
-                {navigation.map((item) => (
-                    
-                    <div key={item.label}>
-                    {item.section && (
-                        <div className="px-4 pb-2 pt-4 text-xs font-black tracking-[0.18em] text-slate-400">
-                        {item.section}
-                        </div>
-                    
-                    )}
-                    
-
-                    <a
-                        href="#"
-                        className={`flex h-[53px] items-center gap-4 px-5 transition ${
-                        item.active
-                            ? "bg-white/10 text-white"
-                            : "text-slate-50 hover:bg-white/5"
-                        }`}
+        <AdminShell activeHref="/dashboard">
+            <Stack spacing={3}>
+                <Box>
+                    <Typography
+                        component="h1"
+                        sx={{
+                            color: "#0a2540",
+                            fontSize: { xs: 28, md: 34 },
+                            fontWeight: 900,
+                            lineHeight: 1.1,
+                            textShadow: "2px 2px 0 #7eb7ed",
+                        }}
                     >
-                        <span className="w-5 text-lg leading-none">{item.icon}</span>
-                        <span>{item.label}</span>
-                    </a>
-                    </div>
-                ))}
-                </nav>
-                <div className="border-t border-white/10 px-5 pt-3">
-                    <LogoutButton />
-                </div>
-            </div>
-            </aside>
+                        Panel Principal 👋
+                    </Typography>
+                    <Typography sx={{ color: "text.secondary", mt: 1 }}>
+                        {formatDashboardDate()}
+                    </Typography>
+                </Box>
 
-            <section className="px-5 py-9 sm:px-7">
-            <header className="mb-6">
-                <h1 className="text-3xl font-black tracking-wide text-[#0a2540] [text-shadow:2px_2px_0_#7eb7ed]">
-                Panel Principal <span className="text-2xl">👋</span>
-                </h1>
-                <p className="mt-2 text-sm text-slate-600">
-                {formatDashboardDate()}
-                </p>
-            </header>
+                <Grid container spacing={2}>
+                    {stats.map((stat) => {
+                        const Icon = stat.icon;
 
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {stats.map((stat) => (
-                <article
-                    key={stat.label}
-                    className={`min-h-[125px] rounded-[14px] border bg-gradient-to-br px-5 py-5 text-white shadow-sm ${stat.className}`}
-                >
-                    <p className="text-sm font-black">{stat.label}</p>
-                    <div className="mt-2 text-4xl font-black leading-none [text-shadow:2px_2px_0_rgba(0,0,0,0.22)]">
-                    {stat.value}
-                    </div>
-                    <p className="mt-3 text-sm font-medium text-white/95">
-                    {stat.detail}
-                    </p>
-                </article>
-                ))}
-            </section>
+                        return (
+                            <Grid key={stat.label} size={{ xs: 12, md: 6, xl: 3 }}>
+                                <Paper
+                                    elevation={0}
+                                    sx={{
+                                        bgcolor: stat.color,
+                                        color: "white",
+                                        minHeight: 126,
+                                        p: 2.5,
+                                    }}
+                                >
+                                    <Stack direction="row" sx={{ alignItems: "center" }}>
+                                        <Typography sx={{ flexGrow: 1, fontWeight: 900 }}>
+                                            {stat.label}
+                                        </Typography>
+                                        <Icon />
+                                    </Stack>
+                                    <Typography
+                                        sx={{
+                                            fontSize: 38,
+                                            fontWeight: 900,
+                                            lineHeight: 1,
+                                            mt: 1.5,
+                                        }}
+                                    >
+                                        {stat.value}
+                                    </Typography>
+                                    <Typography sx={{ mt: 1.5, opacity: 0.95 }}>
+                                        {stat.detail}
+                                    </Typography>
+                                </Paper>
+                            </Grid>
+                        );
+                    })}
+                </Grid>
 
-            <section className="mt-5 grid gap-5 xl:grid-cols-2">
-                <article className="rounded-2xl bg-white px-6 py-7 shadow-lg shadow-slate-300/40">
-                <h2 className="mb-7 flex items-center gap-2 text-lg font-black">
-                    <span>⏱️</span>
-                    Últimas ventas
-                </h2>
+                <Grid container spacing={2.5}>
+                    <Grid size={{ xs: 12, xl: 6 }}>
+                        <Paper elevation={0} sx={{ p: 3 }}>
+                            <Stack direction="row" spacing={1} sx={{ mb: 2.5 }}>
+                                <AssessmentOutlinedIcon color="primary" />
+                                <Typography component="h2" sx={{ fontWeight: 900 }}>
+                                    Últimas ventas
+                                </Typography>
+                            </Stack>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Hora</TableCell>
+                                        <TableCell>Estudiante</TableCell>
+                                        <TableCell>Vendedor</TableCell>
+                                        <TableCell>Total</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={4}
+                                            sx={{ color: "text.secondary", py: 4, textAlign: "center" }}
+                                        >
+                                            Sin ventas aún
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </Paper>
+                    </Grid>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px] border-collapse text-left text-sm">
-                    <thead>
-                        <tr className="border-b border-slate-300 text-xs font-black tracking-wider text-slate-500">
-                        <th className="pb-3 pl-3">HORA</th>
-                        <th className="pb-3">ESTUDIANTE</th>
-                        <th className="pb-3">VENDEDOR</th>
-                        <th className="pb-3">TOTAL</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <tr>
-                        <td className="py-6 text-center text-slate-600" colSpan={4}>
-                            Sin ventas aún
-                        </td>
-                        </tr>
-                    </tbody>
-                    </table>
-                </div>
-                </article>
-
-                <article className="rounded-2xl bg-white px-6 py-7 shadow-lg shadow-slate-300/40">
-                <h2 className="mb-7 flex items-center gap-2 text-lg font-black">
-                    <span>⚠️</span>
-                    Alertas
-                </h2>
-
-                <div className="flex items-center justify-between gap-4">
-                    <div>
-                    <p className="font-black">Samuel Díaz</p>
-                    <p className="mt-1 text-sm text-slate-500">Saldo bajo · 5°</p>
-                    </div>
-
-                    <span className="rounded-full bg-orange-100 px-4 py-2 text-sm font-black text-orange-600">
-                    $3.200
-                    </span>
-                </div>
-                </article>
-            </section>
-            </section>
-        </div>
-        </main>
+                    <Grid size={{ xs: 12, xl: 6 }}>
+                        <Paper elevation={0} sx={{ p: 3 }}>
+                            <Stack direction="row" spacing={1} sx={{ mb: 2.5 }}>
+                                <ErrorOutlineOutlinedIcon color="warning" />
+                                <Typography component="h2" sx={{ fontWeight: 900 }}>
+                                    Alertas
+                                </Typography>
+                            </Stack>
+                            <Stack
+                                direction="row"
+                                sx={{ alignItems: "center", justifyContent: "space-between" }}
+                            >
+                                <Box>
+                                    <Typography sx={{ fontWeight: 900 }}>
+                                        Samuel Díaz
+                                    </Typography>
+                                    <Typography sx={{ color: "text.secondary", fontSize: 14, mt: 0.5 }}>
+                                        Saldo bajo · 5°
+                                    </Typography>
+                                </Box>
+                                <Chip
+                                    label="$3.200"
+                                    sx={{
+                                        bgcolor: "#fff0d8",
+                                        color: "#e66b00",
+                                        fontWeight: 900,
+                                    }}
+                                />
+                            </Stack>
+                        </Paper>
+                    </Grid>
+                </Grid>
+            </Stack>
+        </AdminShell>
     );
 }

@@ -5,19 +5,102 @@
 
 generator client {
   provider = "prisma-client-js"
-  
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  
 }
+
+enum Role {
+  admin
+  vendor
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
   email     String   @unique
   password  String
-  role      String   @default("vendor")
+  role      Role     @default(vendor)
   createdAt DateTime @default(now())
+
+  sales Sale[]
+}
+
+enum StudentType {
+  prepaid
+  weekly
+  monthly
+  beweekly
+}
+
+model Student {
+  id        String      @id @default(cuid())
+  name      String
+  grade     String
+  type      StudentType @default(prepaid)
+  balance   Int         @default(0)
+  isActive  Boolean     @default(true)
+  foodRestriction String?
+  createdAt DateTime    @default(now())
+  guardianWhatsapp String?
+  
+  sales     Sale[]
+  recharges Recharge[]
+  payments  Payment[]
+}
+
+model Product {
+  id        String   @id @default(cuid())
+  name      String
+  price     Int
+  stock     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  saleItems SaleItem[]
+}
+
+model Sale {
+  id        String   @id @default(cuid())
+  studentId String?
+  vendorId  String
+  total     Int
+  createdAt DateTime @default(now())
+
+  student Student?   @relation(fields: [studentId], references: [id])
+  vendor  User       @relation(fields: [vendorId], references: [id])
+  items   SaleItem[]
+}
+
+model SaleItem {
+  id        String @id @default(cuid())
+  saleId    String
+  productId String
+  quantity  Int
+  unitPrice Int
+  subtotal  Int
+
+  sale    Sale    @relation(fields: [saleId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Recharge {
+  id        String   @id @default(cuid())
+  studentId String
+  amount    Int
+  createdAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id])
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  studentId String
+  amount    Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id])
 }
