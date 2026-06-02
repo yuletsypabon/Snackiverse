@@ -1,5 +1,6 @@
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
@@ -7,7 +8,6 @@ import PointOfSaleOutlinedIcon from "@mui/icons-material/PointOfSaleOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import RestaurantMenuOutlinedIcon from "@mui/icons-material/RestaurantMenuOutlined";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
-import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
@@ -34,6 +34,7 @@ const navigation = [
         section: "ADMINISTRACION",
     },
     { icon: RestaurantMenuOutlinedIcon, label: "Productos", href: "/products" },
+    { icon: CategoryOutlinedIcon, label: "Catálogo y Etiquetas", href: "/catalog" },
     { icon: SavingsOutlinedIcon, label: "Recargas", href: "/recharges" },
     { icon: CreditCardOutlinedIcon, label: "Pagos", href: "/payments" },
     { icon: AssessmentOutlinedIcon, label: "Reportes", href: "/reports" },
@@ -43,7 +44,6 @@ const navigation = [
         href: "/reports-center",
     },
     { icon: Inventory2OutlinedIcon, label: "Vendedores", href: "/users" },
-    { icon: SecurityOutlinedIcon, label: "Permisos", href: "/permissions" },
 ];
 
 type AdminShellProps = {

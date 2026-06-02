@@ -1,7 +1,11 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// CONVENCIÓN MONETARIA:
+// Todos los campos de dinero (price, balance, total, unitPrice, subtotal, amount)
+// se almacenan como enteros en PESOS COLOMBIANOS (COP) sin decimales.
+// Ejemplo: 2500 = $2.500 COP.
+// Ver src/lib/currency.ts para el formateador compartido.
 
 generator client {
   provider = "prisma-client-js"
@@ -32,34 +36,90 @@ enum StudentType {
   prepaid
   weekly
   monthly
-  beweekly
+  biweekly
 }
 
 model Student {
-  id        String      @id @default(cuid())
-  name      String
-  grade     String
-  type      StudentType @default(prepaid)
-  balance   Int         @default(0)
-  isActive  Boolean     @default(true)
-  foodRestriction String?
-  createdAt DateTime    @default(now())
+  id               String      @id @default(cuid())
+  name             String
+  grade            String
+  type             StudentType @default(prepaid)
+  balance          Int         @default(0)
+  isActive         Boolean     @default(true)
+  createdAt        DateTime    @default(now())
   guardianWhatsapp String?
-  
+
+  restrictions  StudentRestriction[]
   sales     Sale[]
   recharges Recharge[]
   payments  Payment[]
 }
 
 model Product {
-  id        String   @id @default(cuid())
-  name      String
-  price     Int
-  stock     Int      @default(0)
+  id    String  @id @default(cuid())
+  name  String
+  icon  String?
+  price Int
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  comboItems   ComboItem[] @relation("ComboItems")
+  usedInCombos ComboItem[] @relation("ComboItemProducts")
+
+  tags ProductTag[]
   saleItems SaleItem[]
+}
+
+model Tag {
+  id       String @id @default(cuid())
+  name     String @unique
+
+  products ProductTag[]
+  students StudentRestriction[]
+}
+
+model ProductTag {
+  productId String
+  tagId     String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+}
+
+model StudentRestriction {
+  studentId String
+  tagId     String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, tagId])
+}
+
+model ComboItem {
+  id      String @id @default(cuid())
+  comboId String
+  itemId  String
+
+  combo Product @relation("ComboItems", fields: [comboId], references: [id], onDelete: Cascade)
+  item  Product @relation("ComboItemProducts", fields: [itemId], references: [id])
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  createdAt DateTime @default(now())
+
+  products Product[]
+  icon      String?
 }
 
 model Sale {
@@ -69,9 +129,9 @@ model Sale {
   total     Int
   createdAt DateTime @default(now())
 
-  student Student?   @relation(fields: [studentId], references: [id])
-  vendor  User       @relation(fields: [vendorId], references: [id])
-  items   SaleItem[]
+  student   Student? @relation(fields: [studentId], references: [id])
+  vendor    User     @relation(fields: [vendorId], references: [id])
+  saleItems SaleItem[]
 }
 
 model SaleItem {
@@ -82,7 +142,7 @@ model SaleItem {
   unitPrice Int
   subtotal  Int
 
-  sale    Sale    @relation(fields: [saleId], references: [id])
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
 }
 
@@ -90,6 +150,7 @@ model Recharge {
   id        String   @id @default(cuid())
   studentId String
   amount    Int
+  note      String?
   createdAt DateTime @default(now())
 
   student Student @relation(fields: [studentId], references: [id])
