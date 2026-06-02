@@ -1,34 +1,27 @@
-import { Box, Typography } from "@mui/material";
+import { AdminShell } from "@/modules/dashboard/components/admin-shell";
+import { SaleRegister } from "@/modules/sales/components/sale-register";
+import {
+    listProducts,
+    listCategories,
+} from "@/modules/products/services/product.service";
+import { listStudents } from "@/modules/students/services/student.service";
 
-export default function SalesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SalesPage() {
+    const [products, categories, students] = await Promise.all([
+        listProducts(),
+        listCategories(),
+        listStudents(),
+    ]);
+
     return (
-        <Box
-            component="main"
-            sx={{
-                minHeight: "100vh",
-                bgcolor: "#edf2f8",
-                px: 3,
-                py: 4,
-                color: "#020617",
-            }}
-        >
-            <Typography
-                component="h1"
-                sx={{
-                    fontSize: 32,
-                    fontWeight: 900,
-                }}
-            >
-                Registrar venta
-            </Typography>
-            <Typography
-                sx={{
-                    mt: 1,
-                    color: "#475569",
-                }}
-            >
-                Vista permitida para vendedores.
-            </Typography>
-        </Box>
+        <AdminShell activeHref="/sales">
+            <SaleRegister
+                products={products}
+                categories={categories}
+                students={students}
+            />
+        </AdminShell>
     );
 }
