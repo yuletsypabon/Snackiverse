@@ -13,7 +13,6 @@ const studentSelect = {
     type: true,
     balance: true,
     isActive: true,
-    foodRestriction: true,
     guardianWhatsapp: true,
     createdAt: true,
     _count: {
@@ -21,6 +20,11 @@ const studentSelect = {
             sales: true,
             recharges: true,
             payments: true,
+        },
+    },
+    restrictions: {
+        select: {
+            tag: { select: { id: true, name: true } },
         },
     },
 } satisfies Prisma.StudentSelect;
@@ -31,7 +35,6 @@ type StudentWithCounts = Prisma.StudentGetPayload<{
 
 function normalizeOptionalText(value?: string | null) {
     const trimmed = value?.trim();
-
     return trimmed ? trimmed : null;
 }
 
@@ -43,12 +46,15 @@ function toStudentDto(student: StudentWithCounts): StudentDto {
         type: student.type,
         balance: student.balance,
         isActive: student.isActive,
-        foodRestriction: student.foodRestriction,
         guardianWhatsapp: student.guardianWhatsapp,
         createdAt: student.createdAt.toISOString(),
         salesCount: student._count.sales,
         rechargesCount: student._count.recharges,
         paymentsCount: student._count.payments,
+        restrictions: student.restrictions.map((r) => ({
+            id: r.tag.id,
+            name: r.tag.name,
+        })),
     };
 }
 
@@ -62,14 +68,18 @@ export async function listStudents() {
 }
 
 export async function createStudent(input: CreateStudentInput) {
+    const validTagIds = (input.restrictionTagIds ?? []).filter(Boolean);
+
     const student = await prisma.student.create({
         data: {
             name: input.name,
             grade: input.grade,
             type: input.type,
             balance: input.balance,
-            foodRestriction: normalizeOptionalText(input.foodRestriction),
             guardianWhatsapp: normalizeOptionalText(input.guardianWhatsapp),
+            restrictions: validTagIds.length > 0
+                ? { create: validTagIds.map((tagId) => ({ tagId })) }
+                : undefined,
         },
         select: studentSelect,
     });
@@ -81,15 +91,22 @@ export async function updateStudent(id: string, input: UpdateStudentInput) {
     const student = await prisma.student.update({
         where: { id },
         data: {
-            ...input,
-            foodRestriction:
-                input.foodRestriction !== undefined
-                    ? normalizeOptionalText(input.foodRestriction)
-                    : undefined,
-            guardianWhatsapp:
-                input.guardianWhatsapp !== undefined
-                    ? normalizeOptionalText(input.guardianWhatsapp)
-                    : undefined,
+            ...(input.name !== undefined && { name: input.name }),
+            ...(input.grade !== undefined && { grade: input.grade }),
+            ...(input.type !== undefined && { type: input.type }),
+            ...(input.balance !== undefined && { balance: input.balance }),
+            ...(input.isActive !== undefined && { isActive: input.isActive }),
+            ...(input.guardianWhatsapp !== undefined && {
+                guardianWhatsapp: normalizeOptionalText(input.guardianWhatsapp),
+            }),
+            ...(input.restrictionTagIds !== undefined && {
+                restrictions: {
+                    deleteMany: {},
+                    create: input.restrictionTagIds
+                        .filter(Boolean)
+                        .map((tagId) => ({ tagId })),
+                },
+            }),
         },
         select: studentSelect,
     });
@@ -97,6 +114,36 @@ export async function updateStudent(id: string, input: UpdateStudentInput) {
     return toStudentDto(student);
 }
 
-export async function deactivateStudent(id: string) {
-    return updateStudent(id, { isActive: false });
+export async function deleteStudent(id: string) {
+    const student = await prisma.student.findUnique({
+        where: { id },
+        select: {
+            _count: {
+                select: {
+                    sales: true,
+                    recharges: true,
+                    payments: true,
+                },
+            },
+        },
+    });
+
+    if (!student) {
+        throw new Error("Estudiante no encontrado");
+    }
+
+    const hasHistory =
+        student._count.sales > 0 ||
+        student._count.recharges > 0 ||
+        student._count.payments > 0;
+
+    if (hasHistory) {
+        throw new Error(
+            "No se puede eliminar un estudiante con ventas, recargas o pagos asociados."
+        );
+    }
+
+    await prisma.student.delete({
+        where: { id },
+    });
 }

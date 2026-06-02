@@ -1,10 +1,9 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
-import { verifyToken } from "@/modules/auth/utils/jwt";
+import { authorizeAdmin, isPrismaNotFoundError } from "@/lib/api-auth";
 import {
-    deactivateStudent,
+    deleteStudent,
     updateStudent,
 } from "@/modules/students/services/student.service";
 import { updateStudentSchema } from "@/modules/students/schemas/student.schema";
@@ -14,38 +13,6 @@ type StudentRouteContext = {
         id: string;
     }>;
 };
-
-async function authorizeAdmin() {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-
-    if (!token) {
-        return NextResponse.json(
-            { success: false, error: "No autenticado." },
-            { status: 401 }
-        );
-    }
-
-    const session = await verifyToken(token);
-
-    if (!session || session.role !== "admin") {
-        return NextResponse.json(
-            { success: false, error: "No autorizado." },
-            { status: 403 }
-        );
-    }
-
-    return null;
-}
-
-function isPrismaNotFoundError(error: unknown) {
-    return (
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error &&
-        error.code === "P2025"
-    );
-}
 
 export async function PATCH(req: Request, context: StudentRouteContext) {
     try {
@@ -107,13 +74,35 @@ export async function DELETE(_req: Request, context: StudentRouteContext) {
         }
 
         const { id } = await context.params;
-        const student = await deactivateStudent(id);
+        await deleteStudent(id);
 
         return NextResponse.json({
             success: true,
-            student,
+            id,
         });
     } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === "Estudiante no encontrado") {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: "Estudiante no encontrado.",
+                    },
+                    { status: 404 }
+                );
+            }
+
+            if (error.message.includes("No se puede eliminar")) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: error.message,
+                    },
+                    { status: 409 }
+                );
+            }
+        }
+
         if (isPrismaNotFoundError(error)) {
             return NextResponse.json(
                 {

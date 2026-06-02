@@ -4,7 +4,7 @@ export const studentTypesSchema = [
     "prepaid",
     "weekly",
     "monthly",
-    "beweekly",
+    "biweekly",
 ] as const;
 
 export type StudentType = (typeof studentTypesSchema)[number];
@@ -13,7 +13,7 @@ export const studentTypeLabels: Record<StudentType, string> = {
     prepaid: "Prepago",
     weekly: "Semanal",
     monthly: "Mensual",
-    beweekly: "Quincenal",
+    biweekly: "Quincenal",
 };
 
 const studentBalanceSchema = z.coerce
@@ -27,7 +27,7 @@ export const createStudentSchema = z.object({
     grade: z.string().trim().min(1, "El grado es obligatorio"),
     type: z.enum(studentTypesSchema).default("prepaid"),
     balance: studentBalanceSchema,
-    foodRestriction: z.string().trim().optional(),
+    restrictionTagIds: z.array(z.string()).optional().default([]),
     guardianWhatsapp: z.string().trim().optional(),
 });
 
@@ -45,7 +45,7 @@ export type StudentDto = {
     type: StudentType;
     balance: number;
     isActive: boolean;
-    foodRestriction: string | null;
+    restrictions: { id: string; name: string }[];
     guardianWhatsapp: string | null;
     createdAt: string;
     salesCount: number;

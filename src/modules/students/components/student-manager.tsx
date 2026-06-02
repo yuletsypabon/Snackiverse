@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import AddIcon from "@mui/icons-material/Add";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
@@ -10,6 +10,8 @@ import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import SearchIcon from "@mui/icons-material/Search";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import Tooltip from "@mui/material/Tooltip";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -27,6 +29,7 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
+import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -37,6 +40,7 @@ import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
+import { formatCurrency } from "@/lib/currency";
 import {
     studentTypeLabels,
     studentTypesSchema,
@@ -44,47 +48,41 @@ import {
     type StudentType,
 } from "../schemas/student.schema";
 
+type TagDto = { id: string; name: string };
+
 type StudentManagerProps = {
     initialStudents: StudentDto[];
+    initialTags?: TagDto[];
 };
+
+type NoticeState = {
+    message: string;
+    severity: "success" | "error";
+} | null;
 
 type StudentFormState = {
     name: string;
     grade: string;
     type: StudentType;
     balance: string;
-    foodRestriction: string;
+    restrictionTagIds: string[];
     guardianWhatsapp: string;
 };
-
-const gradeFilters = ["Todos", "Garden", "3°", "4°", "5°", "Docente"];
-const restrictionOptions = ["dulces", "lacteos", "gluten", "snacks", "gaseosas"];
 
 const emptyForm: StudentFormState = {
     name: "",
     grade: "3°",
     type: "prepaid",
     balance: "0",
-    foodRestriction: "",
+    restrictionTagIds: [],
     guardianWhatsapp: "",
 };
-
-const currencyFormatter = new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-});
-
-function formatCurrency(value: number) {
-    return currencyFormatter.format(value);
-}
 
 function sortStudents(students: StudentDto[]) {
     return [...students].sort((a, b) => {
         if (a.isActive !== b.isActive) {
             return Number(b.isActive) - Number(a.isActive);
         }
-
         return a.name.localeCompare(b.name, "es");
     });
 }
@@ -98,48 +96,42 @@ function getApiError(data: unknown) {
     ) {
         return data.error;
     }
-
     return "No se pudo completar la operacion.";
 }
 
-function parseRestrictions(value: string | null) {
-    return (value ?? "")
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-}
-
 function getTypeColor(type: StudentType) {
-    if (type === "weekly") {
-        return { bgcolor: "#d8ecfb", color: "#0065a8" };
-    }
-
-    if (type === "monthly") {
-        return { bgcolor: "#eadcf5", color: "#7b2cbf" };
-    }
-
-    if (type === "beweekly") {
-        return { bgcolor: "#fff0d8", color: "#a75400" };
-    }
-
+    if (type === "weekly") return { bgcolor: "#d8ecfb", color: "#0065a8" };
+    if (type === "monthly") return { bgcolor: "#eadcf5", color: "#7b2cbf" };
+    if (type === "biweekly") return { bgcolor: "#fff0d8", color: "#a75400" };
     return { bgcolor: "#d7f4e4", color: "#008c49" };
 }
 
-export function StudentManager({ initialStudents }: StudentManagerProps) {
+export function StudentManager({ initialStudents, initialTags = [] }: StudentManagerProps) {
     const [students, setStudents] = useState(() => sortStudents(initialStudents));
+    const [tags, setTags] = useState<TagDto[]>(initialTags);
     const [form, setForm] = useState<StudentFormState>(emptyForm);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [query, setQuery] = useState("");
     const [gradeFilter, setGradeFilter] = useState("Todos");
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
+    const [formError, setFormError] = useState("");
+    const [notice, setNotice] = useState<NoticeState>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [studentPendingDelete, setStudentPendingDelete] = useState<StudentDto | null>(null);
+    const [deletingStudent, setDeletingStudent] = useState(false);
 
-    // Generar dinámicamente los filtros de grado basados en los estudiantes existentes
+    // Refrescar etiquetas cada vez que se abre el modal
+    useEffect(() => {
+        if (!isModalOpen) return;
+        fetch("/api/tags")
+            .then((res) => res.json())
+            .then((data: TagDto[]) => setTags(data))
+            .catch(() => {});
+    }, [isModalOpen]);
+
     const generateGradeFilters = () => {
-        const uniqueGrades = [...new Set(students.map((student) => student.grade))];
-        const sorted = uniqueGrades.sort((a, b) => a.localeCompare(b, "es"));
-        return ["Todos", ...sorted];
+        const uniqueGrades = [...new Set(students.map((s) => s.grade))];
+        return ["Todos", ...uniqueGrades.sort((a, b) => a.localeCompare(b, "es"))];
     };
 
     const availableGradeFilters = generateGradeFilters();
@@ -150,30 +142,32 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
             !normalizedQuery ||
             student.name.toLowerCase().includes(normalizedQuery) ||
             student.grade.toLowerCase().includes(normalizedQuery);
-        const matchesGrade =
-            gradeFilter === "Todos" || student.grade === gradeFilter;
-
+        const matchesGrade = gradeFilter === "Todos" || student.grade === gradeFilter;
         return matchesQuery && matchesGrade;
     });
 
     const editingStudent = editingId
-        ? students.find((student) => student.id === editingId)
+        ? students.find((s) => s.id === editingId)
         : null;
 
     const updateForm = <Field extends keyof StudentFormState>(
         field: Field,
         value: StudentFormState[Field]
     ) => {
-        setForm((current) => ({
-            ...current,
-            [field]: value,
-        }));
+        setForm((current) => ({ ...current, [field]: value }));
+    };
+
+    const toggleTag = (tagId: string, checked: boolean) => {
+        const next = checked
+            ? [...form.restrictionTagIds, tagId]
+            : form.restrictionTagIds.filter((id) => id !== tagId);
+        updateForm("restrictionTagIds", next);
     };
 
     const resetForm = () => {
         setForm(emptyForm);
         setEditingId(null);
-        setError("");
+        setFormError("");
     };
 
     const closeModal = () => {
@@ -193,28 +187,37 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
             grade: student.grade,
             type: student.type,
             balance: String(student.balance),
-            foodRestriction: student.foodRestriction ?? "",
+            restrictionTagIds: student.restrictions.map((r) => r.id),
             guardianWhatsapp: student.guardianWhatsapp ?? "",
         });
-        setError("");
+        setFormError("");
         setIsModalOpen(true);
+    };
+
+    const showNotice = (message: string, severity: "success" | "error" = "success") => {
+        setNotice({ message, severity });
     };
 
     const upsertStudent = (student: StudentDto) => {
         setStudents((current) => {
             const exists = current.some((item) => item.id === student.id);
-            const nextStudents = exists
+            const next = exists
                 ? current.map((item) => (item.id === student.id ? student : item))
                 : [student, ...current];
-
-            return sortStudents(nextStudents);
+            return sortStudents(next);
         });
+    };
+
+    const removeStudentFromState = (studentId: string) => {
+        setStudents((current) => current.filter((item) => item.id !== studentId));
     };
 
     const submitForm = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setSaving(true);
-        setError("");
+        setFormError("");
+
+        const isEditing = Boolean(editingId);
 
         try {
             const payload = {
@@ -222,7 +225,7 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                 grade: form.grade,
                 type: form.type,
                 balance: form.balance,
-                foodRestriction: form.foodRestriction,
+                restrictionTagIds: form.restrictionTagIds,
                 guardianWhatsapp: form.guardianWhatsapp,
             };
 
@@ -237,51 +240,77 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
             const data = await response.json();
 
             if (!response.ok) {
-                setError(getApiError(data));
+                setFormError(getApiError(data));
                 return;
             }
 
             upsertStudent(data.student);
             closeModal();
+            showNotice(
+                isEditing
+                    ? "Estudiante actualizado correctamente."
+                    : "Estudiante creado correctamente.",
+                "success"
+            );
         } catch {
-            setError("No se pudo conectar con el servidor.");
+            setFormError("No se pudo conectar con el servidor.");
         } finally {
             setSaving(false);
         }
     };
 
-    const toggleStudentStatus = async (student: StudentDto) => {
-        setError("");
+    const requestDeleteStudent = (student: StudentDto) => {
+        setStudentPendingDelete(student);
+    };
+
+    const closeDeleteDialog = () => {
+        if (deletingStudent) return;
+        setStudentPendingDelete(null);
+    };
+
+    const deleteStudent = async () => {
+        const student = studentPendingDelete;
+        if (!student) return;
+
+        setDeletingStudent(true);
 
         try {
             const response = await fetch(`/api/students/${student.id}`, {
-                method: student.isActive ? "DELETE" : "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: student.isActive
-                    ? undefined
-                    : JSON.stringify({ isActive: true }),
+                method: "DELETE",
             });
             const data = await response.json();
 
             if (!response.ok) {
-                setError(getApiError(data));
+                showNotice(getApiError(data), "error");
                 return;
             }
 
-            upsertStudent(data.student);
+            removeStudentFromState(student.id);
+            showNotice("Estudiante eliminado correctamente.", "error");
+            setStudentPendingDelete(null);
         } catch {
-            setError("No se pudo actualizar el estado del estudiante.");
+            showNotice("No se pudo eliminar el estudiante.", "error");
+        } finally {
+            setDeletingStudent(false);
         }
     };
 
-    const selectedRestrictions = parseRestrictions(form.foodRestriction);
-
-    const toggleRestriction = (restriction: string, checked: boolean) => {
-        const nextRestrictions = checked
-            ? [...selectedRestrictions, restriction]
-            : selectedRestrictions.filter((item) => item !== restriction);
-
-        updateForm("foodRestriction", nextRestrictions.join(", "));
+    const sendWhatsApp = (student: StudentDto) => {
+        if (!student.guardianWhatsapp) return;
+        const isPrepaid = student.type === "prepaid";
+        const lines = [
+            `Hola, le informamos sobre el estado de la cuenta de *${student.name}* (${student.grade}) en la tienda escolar.`,
+            "",
+            isPrepaid
+                ? student.balance < 0
+                    ? `*Saldo en contra (deuda):* ${formatCurrency(Math.abs(student.balance))}`
+                    : `*Saldo disponible:* ${formatCurrency(student.balance)}`
+                : `*Modalidad:* ${studentTypeLabels[student.type]}`,
+            "",
+            "Para más información, comuníquese con la administración del colegio.",
+        ];
+        const text = encodeURIComponent(lines.join("\n"));
+        window.open(`https://wa.me/${student.guardianWhatsapp}?text=${text}`, "_blank");
     };
 
     return (
@@ -355,12 +384,6 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                 </Stack>
             </Paper>
 
-            {error && !isModalOpen && (
-                <Alert severity="error" onClose={() => setError("")}>
-                    {error}
-                </Alert>
-            )}
-
             <TableContainer component={Paper} elevation={0} sx={{ p: 3 }}>
                 <Table sx={{ minWidth: 900 }}>
                     <TableHead>
@@ -386,17 +409,15 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                         ) : (
                             filteredStudents.map((student) => {
                                 const typeColor = getTypeColor(student.type);
-                                const restrictions = parseRestrictions(student.foodRestriction);
                                 const isPrepaid = student.type === "prepaid";
-                                const lowBalance = isPrepaid && student.balance <= 5000;
+                                const inDebt = isPrepaid && student.balance < 0;
+                                const lowBalance = isPrepaid && !inDebt && student.balance <= 5000;
 
                                 return (
                                     <TableRow
                                         key={student.id}
                                         hover
-                                        sx={{
-                                            opacity: student.isActive ? 1 : 0.52,
-                                        }}
+                                        sx={{ opacity: student.isActive ? 1 : 0.52 }}
                                     >
                                         <TableCell>
                                             <Typography sx={{ fontWeight: 900 }}>
@@ -419,9 +440,7 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                                                     bgcolor: typeColor.bgcolor,
                                                     color: typeColor.color,
                                                     fontWeight: 900,
-                                                    "& .MuiChip-icon": {
-                                                        color: typeColor.color,
-                                                    },
+                                                    "& .MuiChip-icon": { color: typeColor.color },
                                                 }}
                                             />
                                         </TableCell>
@@ -429,27 +448,25 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                                             <Chip
                                                 label={
                                                     isPrepaid
-                                                        ? formatCurrency(student.balance)
+                                                        ? inDebt
+                                                            ? `Deuda: ${formatCurrency(Math.abs(student.balance))}`
+                                                            : formatCurrency(student.balance)
                                                         : "Pago al cierre"
                                                 }
                                                 size="small"
                                                 sx={{
                                                     bgcolor: isPrepaid
-                                                        ? lowBalance
-                                                            ? "#fff0d8"
-                                                            : "#d7f4e4"
+                                                        ? inDebt ? "#fee2e2" : lowBalance ? "#fff0d8" : "#d7f4e4"
                                                         : "#fff0d8",
                                                     color: isPrepaid
-                                                        ? lowBalance
-                                                            ? "#e66b00"
-                                                            : "#008c49"
+                                                        ? inDebt ? "#dc2626" : lowBalance ? "#e66b00" : "#008c49"
                                                         : "#d64d00",
                                                     fontWeight: 900,
                                                 }}
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            {restrictions.length === 0 ? (
+                                            {student.restrictions.length === 0 ? (
                                                 <Typography color="text.secondary">—</Typography>
                                             ) : (
                                                 <Stack
@@ -458,10 +475,10 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                                                     useFlexGap
                                                     sx={{ flexWrap: "wrap" }}
                                                 >
-                                                    {restrictions.map((restriction) => (
+                                                    {student.restrictions.map((r) => (
                                                         <Chip
-                                                            key={restriction}
-                                                            label={restriction}
+                                                            key={r.id}
+                                                            label={r.name}
                                                             size="small"
                                                             sx={{
                                                                 bgcolor: "#fde1dd",
@@ -479,6 +496,21 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                                                 spacing={0.75}
                                                 sx={{ justifyContent: "flex-end" }}
                                             >
+                                                {student.guardianWhatsapp && (
+                                                    <Tooltip title="Enviar resumen por WhatsApp">
+                                                        <IconButton
+                                                            aria-label={`WhatsApp acudiente de ${student.name}`}
+                                                            onClick={() => sendWhatsApp(student)}
+                                                            sx={{
+                                                                bgcolor: "#25D366",
+                                                                color: "white",
+                                                                "&:hover": { bgcolor: "#1ebe5a" },
+                                                            }}
+                                                        >
+                                                            <WhatsAppIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
                                                 <IconButton
                                                     aria-label={`Editar ${student.name}`}
                                                     onClick={() => startEditing(student)}
@@ -491,22 +523,12 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                                                     <EditOutlinedIcon fontSize="small" />
                                                 </IconButton>
                                                 <IconButton
-                                                    aria-label={
-                                                        student.isActive
-                                                            ? `Inactivar ${student.name}`
-                                                            : `Reactivar ${student.name}`
-                                                    }
-                                                    onClick={() => toggleStudentStatus(student)}
+                                                    aria-label={`Eliminar ${student.name}`}
+                                                    onClick={() => requestDeleteStudent(student)}
                                                     sx={{
-                                                        bgcolor: student.isActive
-                                                            ? "#e74c3c"
-                                                            : "#2ecc71",
+                                                        bgcolor: "#e74c3c",
                                                         color: "white",
-                                                        "&:hover": {
-                                                            bgcolor: student.isActive
-                                                                ? "#d63e30"
-                                                                : "#27ae60",
-                                                        },
+                                                        "&:hover": { bgcolor: "#d63e30" },
                                                     }}
                                                 >
                                                     <DeleteOutlineOutlinedIcon fontSize="small" />
@@ -521,18 +543,55 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                 </Table>
             </TableContainer>
 
+            {/* ── Dialog: confirmar eliminación ── */}
+            <Dialog
+                open={Boolean(studentPendingDelete)}
+                onClose={closeDeleteDialog}
+                fullWidth
+                maxWidth="xs"
+            >
+                <DialogTitle sx={{ fontSize: 24, fontWeight: 900, pb: 1 }}>
+                    Confirmar eliminación
+                </DialogTitle>
+                <DialogContent sx={{ pt: 2 }}>
+                    <Typography sx={{ color: "text.secondary" }}>
+                        {studentPendingDelete
+                            ? `¿Eliminar definitivamente a ${studentPendingDelete.name}?`
+                            : ""}
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
+                    <Button
+                        type="button"
+                        variant="contained"
+                        color="inherit"
+                        onClick={closeDeleteDialog}
+                        disabled={deletingStudent}
+                        sx={{ px: 3 }}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="contained"
+                        color="error"
+                        onClick={deleteStudent}
+                        disabled={deletingStudent}
+                        sx={{ px: 3 }}
+                    >
+                        {deletingStudent ? "Eliminando..." : "Eliminar"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* ── Dialog: crear / editar estudiante ── */}
             <Dialog
                 open={isModalOpen}
                 onClose={closeModal}
                 fullWidth
                 maxWidth="sm"
                 slotProps={{
-                    paper: {
-                        sx: {
-                            borderRadius: 3,
-                            p: { xs: 0.5, sm: 1 },
-                        },
-                    },
+                    paper: { sx: { borderRadius: 3, overflow: "visible" } },
                 }}
             >
                 <Box component="form" onSubmit={submitForm}>
@@ -540,25 +599,20 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                         {editingStudent ? "Editar Estudiante" : "Agregar Estudiante"}
                     </DialogTitle>
 
-                    <DialogContent sx={{ pt: 2 }}>
-                        <Stack spacing={2.25}>
+                    <DialogContent sx={{ pt: "20px !important", overflow: "visible" }}>
+                        <Stack spacing={2.25} sx={{ mt: 0.5 }}>
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                                 <TextField
                                     label="Nombre completo"
                                     value={form.name}
-                                    onChange={(event) =>
-                                        updateForm("name", event.target.value)
-                                    }
+                                    onChange={(e) => updateForm("name", e.target.value)}
                                     required
                                     fullWidth
                                 />
-
                                 <TextField
                                     label="Grado"
                                     value={form.grade}
-                                    onChange={(event) =>
-                                        updateForm("grade", event.target.value)
-                                    }
+                                    onChange={(e) => updateForm("grade", e.target.value)}
                                     placeholder="Ej: 3°, 4°, Docente"
                                     fullWidth
                                 />
@@ -572,15 +626,16 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                                     labelId="student-type-label"
                                     label="Tipo de tiquetera"
                                     value={form.type}
-                                    onChange={(event) =>
-                                        updateForm(
-                                            "type",
-                                            event.target.value as StudentType
-                                        )
+                                    onChange={(e) =>
+                                        updateForm("type", e.target.value as StudentType)
                                     }
                                 >
                                     {studentTypesSchema.map((type) => (
-                                        <MenuItem key={type} value={type} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <MenuItem
+                                            key={type}
+                                            value={type}
+                                            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                                        >
                                             {type === "prepaid" ? (
                                                 <CreditCardOutlinedIcon sx={{ fontSize: 18 }} />
                                             ) : (
@@ -597,75 +652,74 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                                     label="Saldo a favor"
                                     type="number"
                                     value={form.balance}
-                                    onChange={(event) =>
-                                        updateForm("balance", event.target.value)
-                                    }
-                                    slotProps={{
-                                        htmlInput: { min: 0, step: 100 },
-                                    }}
+                                    onChange={(e) => updateForm("balance", e.target.value)}
+                                    slotProps={{ htmlInput: { min: 0, step: 100 } }}
                                     fullWidth
                                 />
                             )}
 
+                            {/* ── Restricciones alimentarias (tags dinámicos) ── */}
                             <Box>
                                 <Typography sx={{ fontSize: 14, fontWeight: 900, mb: 1 }}>
                                     Restricciones alimentarias
                                 </Typography>
-                                <Stack
-                                    direction="row"
-                                    spacing={1}
-                                    useFlexGap
-                                    sx={{ flexWrap: "wrap" }}
-                                >
-                                    {restrictionOptions.map((restriction) => {
-                                        const checked =
-                                            selectedRestrictions.includes(restriction);
 
-                                        return (
-                                            <FormControlLabel
-                                                key={restriction}
-                                                control={
-                                                    <Checkbox
-                                                        checked={checked}
-                                                        onChange={(event) =>
-                                                            toggleRestriction(
-                                                                restriction,
-                                                                event.target.checked
-                                                            )
-                                                        }
-                                                        size="small"
-                                                    />
-                                                }
-                                                label={restriction}
-                                                sx={{
-                                                    bgcolor: checked ? "#fde1dd" : "#f1f5f9",
-                                                    borderRadius: 1,
-                                                    color: checked ? "#bf1f14" : "#0a2540",
-                                                    fontWeight: 800,
-                                                    m: 0,
-                                                    px: 1,
-                                                    "& .MuiFormControlLabel-label": {
-                                                        fontSize: 14,
-                                                        fontWeight: 800,
-                                                    },
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </Stack>
+                                {tags.length === 0 ? (
+                                    <Typography
+                                        sx={{ fontSize: 13, color: "text.secondary", fontStyle: "italic" }}
+                                    >
+                                        No hay etiquetas creadas. Crea etiquetas primero desde la
+                                        sección de productos.
+                                    </Typography>
+                                ) : (
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        useFlexGap
+                                        sx={{ flexWrap: "wrap" }}
+                                    >
+                                        {tags.map((tag) => {
+                                            const checked = form.restrictionTagIds.includes(tag.id);
+                                            return (
+                                                <FormControlLabel
+                                                    key={tag.id}
+                                                    control={
+                                                        <Checkbox
+                                                            checked={checked}
+                                                            onChange={(e) =>
+                                                                toggleTag(tag.id, e.target.checked)
+                                                            }
+                                                            size="small"
+                                                        />
+                                                    }
+                                                    label={tag.name}
+                                                    sx={{
+                                                        bgcolor: checked ? "#fde1dd" : "#f1f5f9",
+                                                        borderRadius: 1,
+                                                        color: checked ? "#bf1f14" : "#0a2540",
+                                                        m: 0,
+                                                        px: 1,
+                                                        "& .MuiFormControlLabel-label": {
+                                                            fontSize: 14,
+                                                            fontWeight: 800,
+                                                        },
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </Stack>
+                                )}
                             </Box>
 
                             <TextField
                                 label="WhatsApp acudiente (con codigo pais, sin +)"
                                 value={form.guardianWhatsapp}
-                                onChange={(event) =>
-                                    updateForm("guardianWhatsapp", event.target.value)
-                                }
+                                onChange={(e) => updateForm("guardianWhatsapp", e.target.value)}
                                 placeholder="573001234567"
                                 fullWidth
                             />
 
-                            {error && <Alert severity="error">{error}</Alert>}
+                            {formError && <Alert severity="error">{formError}</Alert>}
                         </Stack>
                     </DialogContent>
 
@@ -692,6 +746,24 @@ export function StudentManager({ initialStudents }: StudentManagerProps) {
                     </DialogActions>
                 </Box>
             </Dialog>
+
+            <Snackbar
+                open={Boolean(notice)}
+                autoHideDuration={2800}
+                onClose={(_event, reason) => {
+                    if (reason === "clickaway") return;
+                    setNotice(null);
+                }}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+                <Alert
+                    severity={notice?.severity ?? "success"}
+                    onClose={() => setNotice(null)}
+                    sx={{ width: "100%" }}
+                >
+                    {notice?.message ?? ""}
+                </Alert>
+            </Snackbar>
         </Stack>
     );
 }
