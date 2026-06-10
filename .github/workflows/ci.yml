@@ -21,12 +21,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm ci
-      
-      - name: Clean install (if needed)
-        run: |
-            rm -rf node_modules package-lock.json
-            npm ci
+        run: npm install
 
       - name: Run tests
         run: npx vitest run
