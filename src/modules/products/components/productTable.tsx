@@ -3,7 +3,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
 import RestaurantMenuOutlinedIcon from "@mui/icons-material/RestaurantMenuOutlined";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";

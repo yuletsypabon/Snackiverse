@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 
 import { formatCurrency } from "@/lib/currency";
 import {
@@ -87,7 +87,8 @@ export default function ProductForm({
   const selectedCategoryId = useWatch({ control, name: "categoryId" });
   const selectedIcon = useWatch({ control, name: "icon" });
   const selectedComboItemIds = useWatch({ control, name: "comboItemIds" }) ?? [];
-  const selectedTagIds = useWatch({ control, name: "tagIds" }) ?? [];
+  const rawTagIds = useWatch({ control, name: "tagIds" });
+  const selectedTagIds = useMemo(() => rawTagIds ?? [], [rawTagIds]);
 
   const toggleTag = useCallback((tagId: string, active: boolean) => {
     const next = active

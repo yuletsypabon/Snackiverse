@@ -5,7 +5,6 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -27,7 +26,7 @@ import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 
 import { formatCurrency } from "@/lib/currency";
 
