@@ -107,7 +107,7 @@ export function TagDrawer({
       {/* ── Cabecera ── */}
       <Stack direction="row" sx={{ alignItems: "center", mb: 3 }}>
         <LabelOutlinedIcon sx={{ color: "#0a2540", mr: 1 }} />
-        <Typography sx={{ fontWeight: 900, fontSize: 20, flex: 1, color: "#0a2540" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900, flex: 1, color: "#0a2540" }}>
           Etiquetas
         </Typography>
         <IconButton onClick={onClose} size="small">

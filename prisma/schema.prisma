@@ -44,10 +44,11 @@ model Student {
   name             String
   grade            String
   type             StudentType @default(prepaid)
-  balance          Int         @default(0)
-  isActive         Boolean     @default(true)
-  createdAt        DateTime    @default(now())
-  guardianWhatsapp String?
+  balance            Int         @default(0)
+  isActive           Boolean     @default(true)
+  createdAt          DateTime    @default(now())
+  guardianWhatsapp   String?
+  tiqueteraExpiresAt DateTime?
 
   restrictions  StudentRestriction[]
   sales     Sale[]

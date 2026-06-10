@@ -277,7 +277,7 @@ export default function ProductForm({
             render={({ field }) => (
               <Box>
                 <Stack direction="row" sx={{ alignItems: "center", mb: 1.25 }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 900 }}>Ícono</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Ícono</Typography>
                 </Stack>
                 <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
                   <Chip

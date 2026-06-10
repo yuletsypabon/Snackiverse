@@ -29,6 +29,7 @@ export const createStudentSchema = z.object({
     balance: studentBalanceSchema,
     restrictionTagIds: z.array(z.string()).optional().default([]),
     guardianWhatsapp: z.string().trim().optional(),
+    tiqueteraExpiresAt: z.string().optional().nullable(),
 });
 
 export const updateStudentSchema = createStudentSchema.partial().extend({
@@ -47,6 +48,7 @@ export type StudentDto = {
     isActive: boolean;
     restrictions: { id: string; name: string }[];
     guardianWhatsapp: string | null;
+    tiqueteraExpiresAt: string | null;
     createdAt: string;
     salesCount: number;
     rechargesCount: number;

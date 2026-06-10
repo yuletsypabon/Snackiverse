@@ -12,9 +12,11 @@ export async function getDashboardData() {
     recentSales,
     studentCount,
     productCount,
-    morososCount,
+    deudoresCount,
     lowBalanceStudents,
     salesCountToday,
+    debtorStudents,
+    expiringTiqueteras,
   ] = await Promise.all([
     // Total vendido hoy
     prisma.sale.aggregate({
@@ -58,7 +60,7 @@ export async function getDashboardData() {
     // Total productos activos
     prisma.product.count({ where: { isActive: true } }),
 
-    // Morosos: prepago con saldo negativo
+    // Deudores: prepago con saldo negativo
     prisma.student.count({
       where: { isActive: true, type: "prepaid", balance: { lt: 0 } },
     }),
@@ -76,6 +78,30 @@ export async function getDashboardData() {
 
     // Número de ventas hoy
     prisma.sale.count({ where: { createdAt: { gte: todayStart } } }),
+
+    // Deudores: prepago con saldo negativo
+    prisma.student.findMany({
+      where: { isActive: true, type: "prepaid", balance: { lt: 0 } },
+      select: { id: true, name: true, grade: true, balance: true },
+      orderBy: { balance: "asc" },
+      take: 10,
+    }),
+
+    // Tiqueteras por vencer en los próximos 5 días
+    prisma.student.findMany({
+      where: {
+        isActive: true,
+        type: { in: ["monthly", "biweekly", "weekly"] },
+        tiqueteraExpiresAt: {
+          gte: todayStart,
+          lte: new Date(todayStart.getTime() + 30 * 86400000),
+        },
+      },
+      select: { id: true, name: true, grade: true, type: true, tiqueteraExpiresAt: true },
+      orderBy: { tiqueteraExpiresAt: "asc" },
+      take: 15,
+    }),
+
   ]);
 
   return {
@@ -93,12 +119,25 @@ export async function getDashboardData() {
     })),
     studentCount,
     productCount,
-    morososCount,
+    deudoresCount,
     lowBalanceStudents: lowBalanceStudents.map((s) => ({
       id: s.id,
       name: s.name,
       grade: s.grade,
       balance: s.balance,
+    })),
+    debtorStudents: debtorStudents.map((s) => ({
+      id: s.id,
+      name: s.name,
+      grade: s.grade,
+      balance: s.balance,
+    })),
+    expiringTiqueteras: expiringTiqueteras.map((s) => ({
+      id: s.id,
+      name: s.name,
+      grade: s.grade,
+      type: s.type,
+      expiresAt: s.tiqueteraExpiresAt!.toISOString(),
     })),
   };
 }

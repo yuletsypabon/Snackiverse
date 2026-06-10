@@ -3,10 +3,12 @@
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import RemoveIcon from "@mui/icons-material/Remove";
 import SearchIcon from "@mui/icons-material/Search";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
+import PointOfSaleOutlinedIcon from "@mui/icons-material/PointOfSaleOutlined";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -18,8 +20,12 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import FormControl from "@mui/material/FormControl";
 import InputAdornment from "@mui/material/InputAdornment";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
+import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -32,7 +38,6 @@ import Typography from "@mui/material/Typography";
 import { useState, useMemo, useRef, useEffect } from "react";
 
 import { formatCurrency } from "@/lib/currency";
-import { CategoryIconDisplay } from "@/modules/catalog/utils/category-icons";
 import { getProductIconOption } from "@/modules/products/constants/product-icons";
 import type { ProductDto, ProductCategoryDto } from "@/modules/products/schemas/product.schema";
 import type { StudentDto } from "@/modules/students/schemas/student.schema";
@@ -217,20 +222,20 @@ export function SaleRegister({ products, categories, students }: Props) {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
       {/* ══ TÍTULO ══ */}
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-        <Typography sx={{ fontSize: 28, fontWeight: 900, color: "#0a2540" }}>
+        <PointOfSaleOutlinedIcon sx={{ fontSize: 24, color: "#0a2540" }} />
+        <Typography variant="h5" sx={{ fontWeight: 900, color: "#0a2540" }}>
           Registrar Venta
           
         </Typography>
       </Stack>
 
-      {/* ══ BÚSQUEDA DE ESTUDIANTE ══ */}
+      {/* ══ BÚSQUEDA DE ESTUDIANTE + PRODUCTO ══ */}
       <Paper elevation={0} sx={{ p: 2.5, borderRadius: 2 }}>
+        {/* Estudiante */}
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#64748b", mb: 1.5 }}>
           Buscar estudiante
         </Typography>
-
-        <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start" }}>
-          {/* Input + dropdown */}
+        <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", mb: 2 }}>
           <Box sx={{ flex: 1, position: "relative" }} ref={studentInputRef}>
             <TextField
               placeholder="Escribir nombre o apellido..."
@@ -239,12 +244,7 @@ export function SaleRegister({ products, categories, students }: Props) {
               onFocus={() => setShowStudentDropdown(true)}
               size="small"
               fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  bgcolor: "white",
-                },
-              }}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, bgcolor: "white" } }}
               slotProps={{
                 input: {
                   startAdornment: (
@@ -255,71 +255,30 @@ export function SaleRegister({ products, categories, students }: Props) {
                 },
               }}
             />
-
-            {/* Chip del estudiante seleccionado */}
             {selectedStudent && (
-              <Stack direction="row" spacing={1} sx={{ mt: 1.5, alignItems: "center" }}>
+              <Stack direction="row" spacing={1} sx={{ mt: 1.5, alignItems: "center", flexWrap: "wrap" }}>
                 <Chip
                   label={`${selectedStudent.name} — ${selectedStudent.grade}`}
                   onDelete={clearStudent}
                   deleteIcon={<CloseIcon />}
-                  sx={{
-                    bgcolor: "#dbeafe",
-                    color: "#1d4ed8",
-                    fontWeight: 800,
-                    fontSize: 13,
-                    height: 32,
-                    "& .MuiChip-deleteIcon": { color: "#1d4ed8" },
-                  }}
+                  sx={{ bgcolor: "#dbeafe", color: "#1d4ed8", fontWeight: 800, fontSize: 13, height: 32, "& .MuiChip-deleteIcon": { color: "#1d4ed8" } }}
                 />
-                {selectedStudent.restrictions.length > 0 && (
-                  <>
-                    {selectedStudent.restrictions.map((r) => (
-                      <Chip
-                        key={r.id}
-                        label={r.name}
-                        size="small"
-                        sx={{ bgcolor: "#fee2e2", color: "#dc2626", fontWeight: 700, fontSize: 11 }}
-                      />
-                    ))}
-                  </>
-                )}
+                {selectedStudent.restrictions.map((r) => (
+                  <Chip key={r.id} label={r.name} size="small"
+                    sx={{ bgcolor: "#fee2e2", color: "#dc2626", fontWeight: 700, fontSize: 11 }} />
+                ))}
               </Stack>
             )}
-
-            {/* Dropdown de búsqueda */}
             {showStudentDropdown && filteredStudents.length > 0 && (
-              <Paper
-                elevation={6}
-                sx={{
-                  position: "absolute",
-                  top: 40,
-                  left: 0,
-                  right: 0,
-                  zIndex: 20,
-                  borderRadius: 2,
-                  overflow: "hidden",
-                }}
-              >
+              <Paper elevation={6} sx={{ position: "absolute", top: 40, left: 0, right: 0, zIndex: 20, borderRadius: 2, overflow: "hidden" }}>
                 {filteredStudents.map((s) => (
-                  <Box
-                    key={s.id}
-                    onClick={() => selectStudent(s)}
-                    sx={{
-                      px: 2,
-                      py: 1.5,
-                      cursor: "pointer",
-                      "&:hover": { bgcolor: "#f8fafc" },
-                      borderBottom: "1px solid #f1f5f9",
-                    }}
-                  >
-                    <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{s.name}</Typography>
+                  <Box key={s.id} onClick={() => selectStudent(s)}
+                    sx={{ px: 2, py: 1.5, cursor: "pointer", "&:hover": { bgcolor: "#f8fafc" }, borderBottom: "1px solid #f1f5f9" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{s.name}</Typography>
                     <Typography sx={{ fontSize: 12, color: s.type === "prepaid" && s.balance < 0 ? "#dc2626" : "#64748b" }}>
                       {s.grade} ·{" "}
                       {s.type === "prepaid"
-                        ? s.balance < 0
-                          ? `Deuda: ${formatCurrency(Math.abs(s.balance))}`
-                          : formatCurrency(s.balance)
+                        ? s.balance < 0 ? `Deuda: ${formatCurrency(Math.abs(s.balance))}` : formatCurrency(s.balance)
                         : "Pago al cierre"}
                     </Typography>
                   </Box>
@@ -327,177 +286,87 @@ export function SaleRegister({ products, categories, students }: Props) {
               </Paper>
             )}
           </Box>
-
-          {/* Grado y saldo a la derecha */}
           {selectedStudent && (
             <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start", pt: 0.5, flexShrink: 0 }}>
-              <Chip
-                label={selectedStudent.grade}
-                size="small"
-                sx={{ bgcolor: "#f1f5f9", color: "#475569", fontWeight: 800, fontSize: 13, height: 30 }}
-              />
+              <Chip label={selectedStudent.grade} size="small"
+                sx={{ bgcolor: "#f1f5f9", color: "#475569", fontWeight: 800, fontSize: 13, height: 30 }} />
               {selectedStudent.type === "prepaid" && (
                 <Chip
-                  label={
-                    selectedStudent.balance < 0
-                      ? `Deuda: ${formatCurrency(Math.abs(selectedStudent.balance))}`
-                      : formatCurrency(selectedStudent.balance)
-                  }
+                  label={selectedStudent.balance < 0
+                    ? `Deuda: ${formatCurrency(Math.abs(selectedStudent.balance))}`
+                    : formatCurrency(selectedStudent.balance)}
                   size="small"
                   sx={{
                     bgcolor: selectedStudent.balance < 0 ? "#fee2e2" : selectedStudent.balance <= 5000 ? "#fff7ed" : "#dcfce7",
                     color: selectedStudent.balance < 0 ? "#dc2626" : selectedStudent.balance <= 5000 ? "#ea580c" : "#16a34a",
-                    fontWeight: 900,
-                    fontSize: 13,
-                    height: 30,
+                    fontWeight: 900, fontSize: 13, height: 30,
                   }}
                 />
               )}
             </Stack>
           )}
         </Stack>
+
+        {/* Producto + Categoría */}
+        <Divider sx={{ mb: 2 }} />
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#64748b", mb: 1.5 }}>
+          Buscar producto
+        </Typography>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+          <TextField
+            placeholder="Buscar producto..."
+            value={productQuery}
+            onChange={(e) => setProductQuery(e.target.value)}
+            size="small"
+            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" sx={{ color: "#94a3b8" }} />
+                  </InputAdornment>
+                ),
+                endAdornment: productQuery ? (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setProductQuery("")}>
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null,
+              },
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 180 } }}>
+            <InputLabel>Categoría</InputLabel>
+            <Select
+              value={selectedCategoryId ?? ""}
+              onChange={(e) => setSelectedCategoryId(e.target.value || null)}
+              label="Categoría"
+              sx={{ borderRadius: 2 }}
+            >
+              <MenuItem value="">Todas ({products.filter((p) => p.isActive).length})</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.name} ({countByCategory[cat.id] ?? 0})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
       </Paper>
 
-      {/* ══ CUERPO: categorías | productos | carrito ══ */}
-      <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ alignItems: "flex-start" }}>
-
-        {/* ── CATEGORÍAS ── */}
-        <Paper
-          elevation={0}
-          sx={{ width: { xs: "100%", lg: 220 }, flexShrink: 0, borderRadius: 2, overflow: "hidden" }}
-        >
-          <Typography
-            sx={{ px: 2, pt: 2, pb: 1, fontSize: 12, fontWeight: 900, color: "#64748b", letterSpacing: "0.1em" }}
-          >
-            CATEGORÍAS
-          </Typography>
-
-          {/* Todos */}
-          <Box
-            onClick={() => setSelectedCategoryId(null)}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              px: 2,
-              py: 1.25,
-              mx: 1,
-              mb: 0.5,
-              borderRadius: 2,
-              cursor: "pointer",
-              bgcolor: selectedCategoryId === null ? "#0a2540" : "transparent",
-              color: selectedCategoryId === null ? "white" : "#1e293b",
-              fontWeight: 900,
-              "&:hover": { bgcolor: selectedCategoryId === null ? "#0a2540" : "#f1f5f9" },
-            }}
-          >
-            <CategoryIconDisplay
-              iconKey={null}
-              sx={{ fontSize: 20, color: selectedCategoryId === null ? "white" : "#475569" }}
-            />
-            <Typography sx={{ fontWeight: 900, fontSize: 14, flex: 1, color: "inherit" }}>
-              Todos
-            </Typography>
-            <Chip
-              label={products.filter((p) => p.isActive).length}
-              size="small"
-              sx={{
-                bgcolor: selectedCategoryId === null ? "rgba(255,255,255,0.18)" : "#e2e8f0",
-                color: "inherit",
-                fontWeight: 900,
-                height: 20,
-                fontSize: 11,
-                minWidth: 28,
-              }}
-            />
-          </Box>
-
-          {/* Cada categoría */}
-          {categories.map((cat) => {
-            const count = countByCategory[cat.id] ?? 0;
-            const selected = selectedCategoryId === cat.id;
-            return (
-              <Box
-                key={cat.id}
-                onClick={() => setSelectedCategoryId(selected ? null : cat.id)}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  px: 2,
-                  py: 1.25,
-                  mx: 1,
-                  mb: 0.5,
-                  borderRadius: 2,
-                  cursor: "pointer",
-                  bgcolor: selected ? "#0a2540" : "transparent",
-                  color: selected ? "white" : "#1e293b",
-                  "&:hover": { bgcolor: selected ? "#0a2540" : "#f1f5f9" },
-                }}
-              >
-                <CategoryIconDisplay
-                  iconKey={cat.icon}
-                  sx={{ fontSize: 20, color: selected ? "white" : "#475569" }}
-                />
-                <Typography sx={{ fontWeight: 700, fontSize: 14, flex: 1, color: "inherit" }}>
-                  {cat.name}
-                </Typography>
-                <Chip
-                  label={count}
-                  size="small"
-                  sx={{
-                    bgcolor: selected ? "rgba(255,255,255,0.18)" : "#e2e8f0",
-                    color: "inherit",
-                    fontWeight: 900,
-                    height: 20,
-                    fontSize: 11,
-                    minWidth: 28,
-                  }}
-                />
-              </Box>
-            );
-          })}
-          <Box sx={{ pb: 1.5 }} />
-        </Paper>
+      {/* ══ CUERPO: productos | carrito ══ */}
+      <Stack direction={{ xs: "column", lg: "row" }} spacing={2} sx={{ alignItems: { xs: "stretch", lg: "flex-start" } }}>
 
         {/* ── GRILLA DE PRODUCTOS ── */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          {/* Buscador */}
-          <Paper elevation={0} sx={{ borderRadius: 2, mb: 2 }}>
-            <TextField
-              placeholder="Buscar producto..."
-              value={productQuery}
-              onChange={(e) => setProductQuery(e.target.value)}
-              size="small"
-              fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": { borderRadius: 2 },
-              }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" sx={{ color: "#94a3b8" }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: productQuery ? (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setProductQuery("")}>
-                        <CloseIcon fontSize="small" />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : null,
-                },
-              }}
-            />
-          </Paper>
 
           {/* Tarjetas */}
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-              gap: 1.5,
+              gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+              gap: 0.75,
             }}
           >
             {visibleProducts.map((product) => {
@@ -518,7 +387,7 @@ export function SaleRegister({ products, categories, students }: Props) {
                     elevation={0}
                     onClick={() => addToCart(product)}
                     sx={{
-                      p: 2,
+                      p: 1.25,
                       textAlign: "center",
                       cursor: restricted ? "not-allowed" : "pointer",
                       opacity: restricted ? 0.4 : 1,
@@ -527,13 +396,19 @@ export function SaleRegister({ products, categories, students }: Props) {
                       bgcolor: inCart ? "#eff6ff" : "white",
                       borderRadius: 2.5,
                       transition: "all 0.15s",
+                      aspectRatio: "1 / 1",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
                       "&:hover": restricted
                         ? {}
                         : { boxShadow: "0 4px 16px rgba(0,0,0,0.10)", transform: "translateY(-2px)" },
                     }}
                   >
-                    <Box sx={{ fontSize: 38, lineHeight: 1.1, mb: 0.75, display: "flex", justifyContent: "center" }}>
-                      <ProductIcon iconId={product.icon} size={38} />
+                    <Box sx={{ lineHeight: 1.1, mb: 0.5, display: "flex", justifyContent: "center" }}>
+                      <ProductIcon iconId={product.icon} size={28} />
                     </Box>
                     <Typography
                       sx={{
@@ -551,7 +426,7 @@ export function SaleRegister({ products, categories, students }: Props) {
                     >
                       {product.name}
                     </Typography>
-                    <Typography sx={{ fontWeight: 900, fontSize: 14, color: "#16a34a" }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: 13, color: "#16a34a" }}>
                       {formatCurrency(product.price)}
                     </Typography>
                     {product.comboItems.length > 0 && (
@@ -626,6 +501,9 @@ export function SaleRegister({ products, categories, students }: Props) {
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
+            position: { xs: "sticky", lg: "relative" },
+            bottom: { xs: 0, lg: "auto" },
+            zIndex: { xs: 10, lg: "auto" },
           }}
         >
           {/* Header del carrito */}
@@ -635,7 +513,7 @@ export function SaleRegister({ products, categories, students }: Props) {
             sx={{ alignItems: "center", px: 2, py: 1.75, borderBottom: "1px solid #f1f5f9" }}
           >
             <ShoppingCartIcon sx={{ color: "#475569", fontSize: 20 }} />
-            <Typography sx={{ fontWeight: 900, fontSize: 16, color: "#1e293b" }}>
+            <Typography sx={{ fontWeight: 900, fontSize: 15, color: "#1e293b" }}>
               Carrito
             </Typography>
           </Stack>
@@ -725,7 +603,7 @@ export function SaleRegister({ products, categories, students }: Props) {
                         >
                           <RemoveIcon sx={{ fontSize: 13 }} />
                         </IconButton>
-                        <Typography sx={{ fontWeight: 900, fontSize: 14, minWidth: 22, textAlign: "center" }}>
+                        <Typography sx={{ fontWeight: 900, fontSize: 13, minWidth: 22, textAlign: "center" }}>
                           {item.quantity}
                         </Typography>
                         <IconButton
@@ -799,7 +677,7 @@ export function SaleRegister({ products, categories, students }: Props) {
 
     {/* ══ MODAL DE CONFIRMACIÓN ══ */}
     <Dialog open={confirmOpen} onClose={() => !submitting && setConfirmOpen(false)} fullWidth maxWidth="xs">
-      <DialogTitle sx={{ fontWeight: 900, fontSize: 20, pb: 1 }}>
+      <DialogTitle sx={{ fontWeight: 900, fontSize: 18, pb: 1 }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
           <CheckIcon sx={{ color: "#16a34a", fontSize: 22 }} />
           <span>Confirmar Venta</span>
@@ -839,7 +717,7 @@ export function SaleRegister({ products, categories, students }: Props) {
                     >
                       <RemoveIcon sx={{ fontSize: 12 }} />
                     </IconButton>
-                    <Typography sx={{ fontWeight: 900, fontSize: 14, minWidth: 20, textAlign: "center" }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: 13, minWidth: 20, textAlign: "center" }}>
                       {item.quantity}
                     </Typography>
                     <IconButton size="small"
@@ -860,7 +738,8 @@ export function SaleRegister({ products, categories, students }: Props) {
                     onClick={() => removeFromCart(item.productId)}
                     sx={{ color: "#e74c3c", "&:hover": { bgcolor: "#fde1dd" } }}
                   >
-m                  </IconButton>
+                    <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -870,7 +749,7 @@ m                  </IconButton>
         <Divider sx={{ my: 0 }} />
 
         <Box sx={{ bgcolor: "#0a2540", borderRadius: "0 0 4px 4px", px: 2, py: 1.25, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography sx={{ fontWeight: 900, fontSize: 14, color: "white" }}>TOTAL</Typography>
+          <Typography sx={{ fontWeight: 900, fontSize: 13, color: "white" }}>TOTAL</Typography>
           <Typography sx={{ fontWeight: 900, fontSize: 18, color: "white" }}>{formatCurrency(total)}</Typography>
         </Box>
 
