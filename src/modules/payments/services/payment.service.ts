@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { nextBusinessDay, calculateExpiresAt } from "@/modules/students/services/student.service";
 
 export type PaymentDto = {
   id: string;
@@ -63,13 +64,32 @@ export async function createPayment(
   method: string,
   noteText: string
 ): Promise<PaymentDto> {
-  const row = await prisma.payment.create({
-    data: {
-      studentId,
-      amount,
-      note: encodeNote(method, noteText),
-    },
-    select: paymentSelect,
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { type: true },
   });
+
+  const isTiquetera = student?.type && ["weekly", "biweekly", "monthly"].includes(student.type);
+  const newExpiresAt = isTiquetera
+    ? calculateExpiresAt(student!.type, nextBusinessDay(new Date()))
+    : undefined;
+
+  const [row] = await prisma.$transaction([
+    prisma.payment.create({
+      data: {
+        studentId,
+        amount,
+        note: encodeNote(method, noteText),
+      },
+      select: paymentSelect,
+    }),
+    ...(isTiquetera && newExpiresAt
+      ? [prisma.student.update({
+          where: { id: studentId },
+          data: { tiqueteraExpiresAt: newExpiresAt },
+        })]
+      : []),
+  ]);
+
   return toDto(row);
 }

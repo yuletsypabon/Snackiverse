@@ -39,10 +39,21 @@ function normalizeOptionalText(value?: string | null) {
     return trimmed ? trimmed : null;
 }
 
-function calculateExpiresAt(type: string, from: Date): Date | null {
-    if (type === "weekly")   return new Date(from.getTime() + 7  * 86400000);
-    if (type === "biweekly") return new Date(from.getTime() + 15 * 86400000);
-    if (type === "monthly")  return new Date(from.getTime() + 30 * 86400000);
+/** Retorna el siguiente día hábil (lunes–viernes) a partir de `from`. */
+export function nextBusinessDay(from: Date): Date {
+    const next = new Date(from);
+    next.setDate(next.getDate() + 1);
+    while (next.getDay() === 0 || next.getDay() === 6) {
+        next.setDate(next.getDate() + 1);
+    }
+    return next;
+}
+
+/** Calcula la fecha de vencimiento de una tiquetera a partir de `start`. */
+export function calculateExpiresAt(type: string, start: Date): Date | null {
+    if (type === "weekly")   return new Date(start.getTime() + 7  * 86400000);
+    if (type === "biweekly") return new Date(start.getTime() + 15 * 86400000);
+    if (type === "monthly")  return new Date(start.getTime() + 30 * 86400000);
     return null;
 }
 
@@ -86,7 +97,7 @@ export async function createStudent(input: CreateStudentInput) {
             type: input.type,
             balance: input.balance,
             guardianWhatsapp: normalizeOptionalText(input.guardianWhatsapp),
-            tiqueteraExpiresAt: calculateExpiresAt(input.type, new Date()),
+            tiqueteraExpiresAt: calculateExpiresAt(input.type, nextBusinessDay(new Date())),
             restrictions: validTagIds.length > 0
                 ? { create: validTagIds.map((tagId) => ({ tagId })) }
                 : undefined,
@@ -98,15 +109,29 @@ export async function createStudent(input: CreateStudentInput) {
 }
 
 export async function updateStudent(id: string, input: UpdateStudentInput) {
+    const TIQUETERA_TYPES = ["weekly", "biweekly", "monthly"];
+
+    // Solo recalcular tiqueteraExpiresAt si el tipo cambia a uno de tiquetera
+    let tiqueteraUpdate: { tiqueteraExpiresAt: Date | null } | undefined;
+    if (input.type !== undefined) {
+        const current = await prisma.student.findUnique({ where: { id }, select: { type: true } });
+        const typeChanged = current?.type !== input.type;
+        if (typeChanged) {
+            tiqueteraUpdate = {
+                tiqueteraExpiresAt: TIQUETERA_TYPES.includes(input.type)
+                    ? calculateExpiresAt(input.type, nextBusinessDay(new Date()))
+                    : null,
+            };
+        }
+    }
+
     const student = await prisma.student.update({
         where: { id },
         data: {
             ...(input.name !== undefined && { name: input.name }),
             ...(input.grade !== undefined && { grade: input.grade }),
             ...(input.type !== undefined && { type: input.type }),
-            ...(input.type !== undefined && {
-                tiqueteraExpiresAt: calculateExpiresAt(input.type, new Date()),
-            }),
+            ...tiqueteraUpdate,
             ...(input.balance !== undefined && { balance: input.balance }),
             ...(input.isActive !== undefined && { isActive: input.isActive }),
             ...(input.guardianWhatsapp !== undefined && {
