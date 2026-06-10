@@ -29,7 +29,7 @@ export async function PATCH(
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(
-                { success: false, error: error.errors[0]?.message ?? "Datos inválidos." },
+                { success: false, error: error.issues[0]?.message ?? "Datos inválidos." },
                 { status: 400 }
             );
         }
