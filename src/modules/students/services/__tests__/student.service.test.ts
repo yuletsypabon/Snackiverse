@@ -73,6 +73,27 @@ describe("createStudent", () => {
         const callArg = vi.mocked(prisma.student.create).mock.calls[0][0];
         expect(callArg.data.guardianWhatsapp).toBeNull();
     });
+
+    // ── CP-16 ─────────────────────────────────────────────────────────────────
+    it("CP-16 — establece tiqueteraExpiresAt al crear estudiante tiquetera", async () => {
+        const row = makeStudentRow({ type: "weekly", tiqueteraExpiresAt: new Date() });
+        vi.mocked(prisma.student.create).mockResolvedValue(row as never);
+
+        await createStudent({ name: "Ana Torres", grade: "2°", type: "weekly", restrictionTagIds: [] });
+
+        const callArg = vi.mocked(prisma.student.create).mock.calls[0][0];
+        expect(callArg.data.tiqueteraExpiresAt).toBeInstanceOf(Date);
+    });
+
+    it("CP-16 — tiqueteraExpiresAt es null para estudiante prepago", async () => {
+        const row = makeStudentRow({ tiqueteraExpiresAt: null });
+        vi.mocked(prisma.student.create).mockResolvedValue(row as never);
+
+        await createStudent({ name: "Luis Ramos", grade: "3°", type: "prepaid", restrictionTagIds: [] });
+
+        const callArg = vi.mocked(prisma.student.create).mock.calls[0][0];
+        expect(callArg.data.tiqueteraExpiresAt).toBeNull();
+    });
 });
 
 // ─── updateStudent ────────────────────────────────────────────────────────────
@@ -109,6 +130,37 @@ describe("updateStudent", () => {
 
         const callArg = vi.mocked(prisma.student.update).mock.calls[0][0];
         expect(callArg.data.restrictions).toBeUndefined();
+    });
+
+    // ── CP-19 ─────────────────────────────────────────────────────────────────
+    it("CP-19 — al cambiar a tiquetera asigna tiqueteraExpiresAt", async () => {
+        vi.mocked(prisma.student.findUnique).mockResolvedValue({ type: "prepaid" } as never);
+        vi.mocked(prisma.student.update).mockResolvedValue(makeStudentRow({ type: "weekly" }) as never);
+
+        await updateStudent("stu-1", { type: "weekly" });
+
+        const callArg = vi.mocked(prisma.student.update).mock.calls[0][0];
+        expect(callArg.data.tiqueteraExpiresAt).toBeInstanceOf(Date);
+    });
+
+    it("CP-19 — al cambiar de tiquetera a prepaid setea tiqueteraExpiresAt a null", async () => {
+        vi.mocked(prisma.student.findUnique).mockResolvedValue({ type: "weekly" } as never);
+        vi.mocked(prisma.student.update).mockResolvedValue(makeStudentRow({ type: "prepaid" }) as never);
+
+        await updateStudent("stu-1", { type: "prepaid" });
+
+        const callArg = vi.mocked(prisma.student.update).mock.calls[0][0];
+        expect(callArg.data.tiqueteraExpiresAt).toBeNull();
+    });
+
+    it("CP-19 — no modifica tiqueteraExpiresAt si el tipo no cambia", async () => {
+        vi.mocked(prisma.student.findUnique).mockResolvedValue({ type: "weekly" } as never);
+        vi.mocked(prisma.student.update).mockResolvedValue(makeStudentRow({ type: "weekly" }) as never);
+
+        await updateStudent("stu-1", { type: "weekly" });
+
+        const callArg = vi.mocked(prisma.student.update).mock.calls[0][0];
+        expect(callArg.data.tiqueteraExpiresAt).toBeUndefined();
     });
 });
 

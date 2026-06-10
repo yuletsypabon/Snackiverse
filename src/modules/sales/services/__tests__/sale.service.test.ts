@@ -195,3 +195,113 @@ describe("Producto inexistente o inactivo", () => {
     );
   });
 });
+
+// ─── CP-01: Venta con múltiples productos distintos ───────────────────────────
+describe("CP-01 — Venta con múltiples productos distintos", () => {
+  const MULTI_INPUT = {
+    studentId: "stu-1",
+    items: [
+      { productId: "prod-1", quantity: 1 },
+      { productId: "prod-2", quantity: 2 },
+    ],
+  };
+
+  const MULTI_SALE_ROW = {
+    ...BASE_SALE_ROW,
+    total: 5000,
+    saleItems: [
+      { productId: "prod-1", quantity: 1, unitPrice: 2000, subtotal: 2000, product: { name: "Empanada" } },
+      { productId: "prod-2", quantity: 2, unitPrice: 1500, subtotal: 3000, product: { name: "Jugo" } },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.mocked(prisma.product.findMany).mockResolvedValue([
+      { id: "prod-1", name: "Empanada", price: 2000 },
+      { id: "prod-2", name: "Jugo",     price: 1500 },
+    ] as never);
+  });
+
+  it("calcula el total sumando todos los ítems correctamente", async () => {
+    mockTransaction({ type: "prepaid", balance: 20000, isActive: true }, 15000);
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: TxFn) => {
+      const tx = {
+        student: {
+          findUnique: vi.fn().mockResolvedValue({ type: "prepaid", balance: 20000, isActive: true }),
+          update: vi.fn().mockResolvedValue({ balance: 15000 }),
+        },
+        sale: { create: vi.fn().mockResolvedValue(MULTI_SALE_ROW) },
+      };
+      return fn(tx);
+    });
+
+    const result = await createSale(MULTI_INPUT, VENDOR_ID);
+
+    expect(result.total).toBe(5000);
+    expect(result.items).toHaveLength(2);
+  });
+
+  it("decrementa el saldo con el total acumulado de todos los ítems", async () => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: TxFn) => {
+      const tx = {
+        student: {
+          findUnique: vi.fn().mockResolvedValue({ type: "prepaid", balance: 20000, isActive: true }),
+          update: vi.fn().mockResolvedValue({ balance: 15000 }),
+        },
+        sale: { create: vi.fn().mockResolvedValue(MULTI_SALE_ROW) },
+      };
+      const result = await fn(tx);
+      expect(tx.student.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { balance: { decrement: 5000 } } })
+      );
+      return result;
+    });
+
+    await createSale(MULTI_INPUT, VENDOR_ID);
+  });
+});
+
+// ─── CP-03: Venta con producto combo ─────────────────────────────────────────
+describe("CP-03 — Venta con producto combo", () => {
+  const COMBO_SALE_ROW = {
+    ...BASE_SALE_ROW,
+    id: "sale-combo",
+    total: 3500,
+    saleItems: [
+      { productId: "combo-1", quantity: 1, unitPrice: 3500, subtotal: 3500, product: { name: "Combo Empanada + Jugo" } },
+    ],
+  };
+
+  it("vende un combo usando su precio compuesto correctamente", async () => {
+    vi.mocked(prisma.product.findMany).mockResolvedValue([
+      { id: "combo-1", name: "Combo Empanada + Jugo", price: 3500 },
+    ] as never);
+
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: TxFn) => {
+      const tx = {
+        student: {
+          findUnique: vi.fn().mockResolvedValue({ type: "prepaid", balance: 10000, isActive: true }),
+          update: vi.fn().mockResolvedValue({ balance: 6500 }),
+        },
+        sale: { create: vi.fn().mockResolvedValue(COMBO_SALE_ROW) },
+      };
+      return fn(tx);
+    });
+
+    const result = await createSale(
+      { studentId: "stu-1", items: [{ productId: "combo-1", quantity: 1 }] },
+      VENDOR_ID
+    );
+
+    expect(result.total).toBe(3500);
+    expect(result.items[0].productName).toBe("Combo Empanada + Jugo");
+  });
+
+  it("lanza error si el combo está inactivo o no existe", async () => {
+    vi.mocked(prisma.product.findMany).mockResolvedValue([] as never);
+
+    await expect(
+      createSale({ studentId: "stu-1", items: [{ productId: "combo-1", quantity: 1 }] }, VENDOR_ID)
+    ).rejects.toThrow("Uno o más productos no existen o están inactivos.");
+  });
+});
