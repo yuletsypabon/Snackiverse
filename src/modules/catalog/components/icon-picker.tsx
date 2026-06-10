@@ -3,7 +3,7 @@
 import Box from "@mui/material/Box";
 import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
-import { useState, useRef } from "react";
+import { useState } from "react";
 
 import {
   CATEGORY_ICON_LIST,
@@ -17,16 +17,15 @@ type IconPickerProps = {
 };
 
 export function IconPicker({ value, onChange }: IconPickerProps) {
-  const [open, setOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const open = Boolean(anchorEl);
 
   return (
     <>
       {/* Trigger: botón con el ícono actual */}
       <Tooltip title="Cambiar ícono">
         <Box
-          ref={anchorRef}
-          onClick={() => setOpen(true)}
+          onClick={(e) => setAnchorEl(e.currentTarget)}
           sx={{
             width: 44,
             height: 44,
@@ -53,8 +52,8 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
       {/* Popover con la grilla de iconos */}
       <Popover
         open={open}
-        anchorEl={anchorRef.current}
-        onClose={() => setOpen(false)}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
         slotProps={{
@@ -77,7 +76,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
             return (
               <Tooltip key={key} title={key} placement="top">
                 <Box
-                  onClick={() => { onChange(key); setOpen(false); }}
+                  onClick={() => { onChange(key); setAnchorEl(null); }}
                   sx={{
                     width: 32,
                     height: 32,

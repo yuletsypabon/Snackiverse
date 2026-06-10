@@ -374,7 +374,7 @@ function TiqueteraReport({ ticketType }: { ticketType: "weekly" | "biweekly" | "
                       </Tooltip>
                       <Button size="small" variant="contained"
                         startIcon={<CheckCircleOutlinedIcon sx={{ fontSize: 15 }} />}
-                        onClick={() => setSettled((prev) => { const s2 = new Set(prev); s2.has(s.id) ? s2.delete(s.id) : s2.add(s.id); return s2; })}
+                        onClick={() => setSettled((prev) => { const s2 = new Set(prev); if (s2.has(s.id)) { s2.delete(s.id); } else { s2.add(s.id); } return s2; })}
                         sx={{ bgcolor: isSettled ? "#64748b" : "#22c55e", "&:hover": { bgcolor: isSettled ? "#475569" : "#16a34a" }, fontWeight: 800, fontSize: 12 }}>
                         {isSettled ? "Deshacer" : "Cancelada"}
                       </Button>

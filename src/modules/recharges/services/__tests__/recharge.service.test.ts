@@ -46,7 +46,7 @@ describe("CP-09 — Pago parcial de deuda actualiza saldo correctamente", () => 
     vi.mocked(prisma.recharge.create).mockResolvedValue(RECHARGE_ROW as never);
     vi.mocked(prisma.student.update).mockResolvedValue({ balance: -4000 } as never);
     // Simula el comportamiento real: ejecuta todas las promesas del array
-    vi.mocked(prisma.$transaction).mockImplementation((ops: any) => Promise.all(ops));
+    vi.mocked(prisma.$transaction).mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
   });
 
   it("saldo pasa de -10000 a -4000 tras recarga de 6000", async () => {

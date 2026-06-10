@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createSale } from "../sale.service";
 
+type MockTx = {
+  student: { findUnique: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+  sale: { create: ReturnType<typeof vi.fn> };
+};
+type TxFn = (tx: MockTx) => Promise<unknown>;
+
 // ─── Mock de Prisma ───────────────────────────────────────────────────────────
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -39,7 +45,7 @@ const BASE_SALE_ROW = {
 };
 
 function mockTransaction(studentRow: object | null, updatedBalance: number) {
-  vi.mocked(prisma.$transaction).mockImplementation(async (fn: (tx: any) => any) => {
+  vi.mocked(prisma.$transaction).mockImplementation(async (fn: TxFn) => {
     const tx = {
       student: {
         findUnique: vi.fn().mockResolvedValue(studentRow),
@@ -71,7 +77,7 @@ describe("CP-05 — Venta exitosa con saldo positivo", () => {
   });
 
   it("decrementa el saldo del estudiante prepago", async () => {
-    const txImpl = vi.mocked(prisma.$transaction).mockImplementation(async (fn: (tx: any) => any) => {
+    const txImpl = vi.mocked(prisma.$transaction).mockImplementation(async (fn: TxFn) => {
       const tx = {
         student: {
           findUnique: vi.fn().mockResolvedValue({ type: "prepaid", balance: 10000, isActive: true }),
@@ -104,7 +110,7 @@ describe("CP-06 — Venta con saldo en 0 queda en deuda", () => {
   });
 
   it("llama a decrement aunque el saldo sea 0", async () => {
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn: (tx: any) => any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: TxFn) => {
       const tx = {
         student: {
           findUnique: vi.fn().mockResolvedValue({ type: "prepaid", balance: 0, isActive: true }),
@@ -152,7 +158,7 @@ describe("CP-18 — Estudiante inactivo no puede comprar", () => {
   });
 
   it("no crea la venta si el estudiante está inactivo", async () => {
-    vi.mocked(prisma.$transaction).mockImplementation(async (fn: (tx: any) => any) => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: TxFn) => {
       const tx = {
         student: {
           findUnique: vi.fn().mockResolvedValue({ type: "prepaid", balance: 5000, isActive: false }),
