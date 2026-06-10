@@ -34,3 +34,16 @@ function toVendorDto(v: { id: string; name: string; email: string; createdAt: Da
 
     return toVendorDto(vendor);
 }
+
+export async function updateVendorPassword(id: string, newPassword: string): Promise<void> {
+    const vendor = await prisma.user.findUnique({ where: { id, role: "vendor" } });
+
+    if (!vendor) {
+        throw new Error("Vendedor no encontrado.");
+    }
+
+    await prisma.user.update({
+        where: { id },
+        data: { password: await hashPassword(newPassword) },
+    });
+}

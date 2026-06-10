@@ -7,6 +7,7 @@ import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import SearchIcon from "@mui/icons-material/Search";
@@ -316,16 +317,8 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
     return (
         <Stack spacing={2.5}>
             <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                <GroupOutlinedIcon sx={{ fontSize: 34, color: "#0a2540" }} />
-                <Typography
-                    component="h1"
-                    sx={{
-                        color: "#0a2540",
-                        fontSize: { xs: 28, md: 34 },
-                        fontWeight: 900,
-                        lineHeight: 1.1,
-                    }}
-                >
+                <BadgeOutlinedIcon sx={{ fontSize: 24, color: "#0a2540" }} />
+                <Typography variant="h5" sx={{ fontWeight: 900, color: "#0a2540" }}>
                     Estudiantes
                 </Typography>
             </Stack>
@@ -341,13 +334,15 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder="Nombre o apellido..."
                         fullWidth
+                        size="small"
                         slotProps={{
                             input: {
                                 startAdornment: (
                                     <InputAdornment position="start">
-                                        <SearchIcon color="primary" />
+                                        <SearchIcon color="primary" fontSize="small" />
                                     </InputAdornment>
                                 ),
+                                sx: { fontSize: 13 },
                             },
                         }}
                     />
@@ -355,12 +350,12 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                         type="button"
                         variant="contained"
                         color="secondary"
-                        size="large"
+                        size="small"
                         startIcon={<AddIcon />}
                         onClick={openCreateModal}
-                        sx={{ minWidth: 116 }}
+                        sx={{ minWidth: 160, whiteSpace: "nowrap", fontSize: 13, fontWeight: 800, py: 1 }}
                     >
-                        Nuevo
+                        Crear estudiante
                     </Button>
                 </Stack>
 
@@ -384,16 +379,16 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                 </Stack>
             </Paper>
 
-            <TableContainer component={Paper} elevation={0} sx={{ p: 3 }}>
-                <Table sx={{ minWidth: 900 }}>
+            <TableContainer component={Paper} elevation={0} sx={{ p: { xs: 1, sm: 3 }, overflowX: "auto" }}>
+                <Table sx={{ minWidth: 700, "& .MuiTableCell-root": { fontSize: 14 } }}>
                     <TableHead>
-                        <TableRow>
-                            <TableCell>Nombre</TableCell>
-                            <TableCell>Grado</TableCell>
-                            <TableCell>Tipo</TableCell>
-                            <TableCell>Saldo/Estado</TableCell>
-                            <TableCell>Restricciones</TableCell>
-                            <TableCell align="right">Acciones</TableCell>
+                        <TableRow sx={{ bgcolor: "#f8fafc" }}>
+                            <TableCell sx={{ fontWeight: 900, color: "#64748b" }}>Nombre</TableCell>
+                            <TableCell sx={{ display: { xs: "none", sm: "table-cell" }, fontWeight: 900, color: "#64748b" }}>Grado</TableCell>
+                            <TableCell sx={{ display: { xs: "none", sm: "table-cell" }, fontWeight: 900, color: "#64748b" }}>Tipo</TableCell>
+                            <TableCell sx={{ fontWeight: 900, color: "#64748b" }}>Saldo/Estado</TableCell>
+                            <TableCell sx={{ display: { xs: "none", md: "table-cell" }, fontWeight: 900, color: "#64748b" }}>Restricciones</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 900, color: "#64748b" }}>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -420,12 +415,12 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                                         sx={{ opacity: student.isActive ? 1 : 0.52 }}
                                     >
                                         <TableCell>
-                                            <Typography sx={{ fontWeight: 900 }}>
+                                            <Typography sx={{ fontWeight: 900, fontSize: 14 }}>
                                                 {student.name}
                                             </Typography>
                                         </TableCell>
-                                        <TableCell>{student.grade}</TableCell>
-                                        <TableCell>
+                                        <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{student.grade}</TableCell>
+                                        <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
                                             <Chip
                                                 icon={
                                                     student.type === "prepaid" ? (
@@ -465,7 +460,7 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                                                 }}
                                             />
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
                                             {student.restrictions.length === 0 ? (
                                                 <Typography color="text.secondary">—</Typography>
                                             ) : (
@@ -550,7 +545,7 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                 fullWidth
                 maxWidth="xs"
             >
-                <DialogTitle sx={{ fontSize: 24, fontWeight: 900, pb: 1 }}>
+                <DialogTitle sx={{ fontSize: 18, fontWeight: 900, pb: 1 }}>
                     Confirmar eliminación
                 </DialogTitle>
                 <DialogContent sx={{ pt: 2 }}>
@@ -595,7 +590,7 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                 }}
             >
                 <Box component="form" onSubmit={submitForm}>
-                    <DialogTitle sx={{ fontSize: 24, fontWeight: 900, pb: 1 }}>
+                    <DialogTitle sx={{ fontSize: 18, fontWeight: 900, pb: 1 }}>
                         {editingStudent ? "Editar Estudiante" : "Agregar Estudiante"}
                     </DialogTitle>
 
@@ -660,7 +655,7 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
 
                             {/* ── Restricciones alimentarias (tags dinámicos) ── */}
                             <Box>
-                                <Typography sx={{ fontSize: 14, fontWeight: 900, mb: 1 }}>
+                                <Typography sx={{ fontSize: 13, fontWeight: 900, mb: 1 }}>
                                     Restricciones alimentarias
                                 </Typography>
 
@@ -700,7 +695,7 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                                                         m: 0,
                                                         px: 1,
                                                         "& .MuiFormControlLabel-label": {
-                                                            fontSize: 14,
+                                                            fontSize: 13,
                                                             fontWeight: 800,
                                                         },
                                                     }}

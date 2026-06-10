@@ -9,12 +9,7 @@ export async function GET() {
   const students = await prisma.student.findMany({
     where: {
       isActive: true,
-      OR: [
-        { type: "prepaid", balance: { gte: 0 } },
-        { type: "weekly" },
-        { type: "monthly" },
-        { type: "biweekly" },
-      ],
+      balance: { gte: 0 },
     },
     select: {
       id: true,

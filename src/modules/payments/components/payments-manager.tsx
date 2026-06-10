@@ -2,6 +2,7 @@
 
 import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
+import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
@@ -120,8 +121,8 @@ export function PaymentsManager({ students, initialPayments }: Props) {
     <Stack spacing={3}>
       {/* Título */}
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-        <AccountBalanceWalletOutlinedIcon sx={{ fontSize: 34, color: "#0a2540" }} />
-        <Typography sx={{ fontSize: { xs: 28, md: 34 }, fontWeight: 900, color: "#0a2540" }}>
+        <CreditCardOutlinedIcon sx={{ fontSize: 24, color: "#0a2540" }} />
+        <Typography variant="h5" sx={{ fontWeight: 900, color: "#0a2540" }}>
           Registro de Pagos
         </Typography>
       </Stack>
@@ -132,7 +133,7 @@ export function PaymentsManager({ students, initialPayments }: Props) {
           <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
             <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 2.5 }}>
               <CheckCircleOutlinedIcon sx={{ color: "#16a34a", fontSize: 20 }} />
-              <Typography sx={{ fontWeight: 900, fontSize: 16 }}>Registrar Pago</Typography>
+              <Typography sx={{ fontWeight: 900, fontSize: 15 }}>Registrar Pago</Typography>
             </Stack>
 
             <Box component="form" onSubmit={handleSubmit}>
@@ -174,7 +175,7 @@ export function PaymentsManager({ students, initialPayments }: Props) {
                             onClick={() => { setSelectedStudent(s); setQuery(""); setShowDropdown(false); }}
                             sx={{ px: 2, py: 1.25, cursor: "pointer", "&:hover": { bgcolor: "#f8fafc" }, borderBottom: "1px solid #f1f5f9" }}
                           >
-                            <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{s.name}</Typography>
+                            <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{s.name}</Typography>
                             <Typography sx={{ fontSize: 12, color: "#64748b" }}>
                               {s.grade} · {s.type === "weekly" ? "Semanal" : s.type === "monthly" ? "Mensual" : "Quincenal"}
                             </Typography>
@@ -215,9 +216,9 @@ export function PaymentsManager({ students, initialPayments }: Props) {
                   <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#64748b", mb: 0.75 }}>Medio de pago</Typography>
                   <FormControl size="small" fullWidth>
                     <Select value={method} onChange={(e) => setMethod(e.target.value)}>
-                      <MenuItem value="efectivo"><AttachMoneyIcon sx={{ fontSize: 16, mr: 0.75, verticalAlign: "middle" }} />Efectivo</MenuItem>
-                      <MenuItem value="transferencia"><AccountBalanceOutlinedIcon sx={{ fontSize: 16, mr: 0.75, verticalAlign: "middle" }} />Transferencia</MenuItem>
-                      <MenuItem value="otro"><MoreHorizIcon sx={{ fontSize: 16, mr: 0.75, verticalAlign: "middle" }} />Otro</MenuItem>
+                      <MenuItem value="efectivo"><AttachMoneyIcon sx={{ fontSize: 15, mr: 0.75, verticalAlign: "middle" }} />Efectivo</MenuItem>
+                      <MenuItem value="transferencia"><AccountBalanceOutlinedIcon sx={{ fontSize: 15, mr: 0.75, verticalAlign: "middle" }} />Transferencia</MenuItem>
+                      <MenuItem value="otro"><MoreHorizIcon sx={{ fontSize: 15, mr: 0.75, verticalAlign: "middle" }} />Otro</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
@@ -260,11 +261,11 @@ export function PaymentsManager({ students, initialPayments }: Props) {
           <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
             <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 2.5 }}>
               <HistoryOutlinedIcon sx={{ color: "#475569", fontSize: 20 }} />
-              <Typography sx={{ fontWeight: 900, fontSize: 16 }}>Historial</Typography>
+              <Typography sx={{ fontWeight: 900, fontSize: 15 }}>Historial</Typography>
             </Stack>
 
             {payments.length === 0 ? (
-              <Typography sx={{ color: "text.secondary", textAlign: "center", py: 5, fontSize: 14 }}>
+              <Typography sx={{ color: "text.secondary", textAlign: "center", py: 5, fontSize: 13 }}>
                 No hay pagos registrados aún.
               </Typography>
             ) : (
@@ -279,7 +280,7 @@ export function PaymentsManager({ students, initialPayments }: Props) {
                         sx={{ alignItems: "center", justifyContent: "space-between", py: 1.75, px: 0.5 }}
                       >
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography sx={{ fontWeight: 900, fontSize: 14, color: "#0a2540" }}>
+                          <Typography sx={{ fontWeight: 700, fontSize: 13, color: "#0a2540" }}>
                             {p.studentName}
                           </Typography>
                           <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 0.5, flexWrap: "wrap" }}>
@@ -298,7 +299,7 @@ export function PaymentsManager({ students, initialPayments }: Props) {
                             )}
                           </Stack>
                         </Box>
-                        <Typography sx={{ fontWeight: 900, fontSize: 16, color: "#16a34a", ml: 2, flexShrink: 0 }}>
+                        <Typography sx={{ fontWeight: 900, fontSize: 15, color: "#16a34a", ml: 2, flexShrink: 0 }}>
                           +{formatCurrency(p.amount)}
                         </Typography>
                       </Stack>

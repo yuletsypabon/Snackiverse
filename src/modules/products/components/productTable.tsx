@@ -155,30 +155,12 @@ export function ProductTable({ initialProducts, categories, tags: initialTags }:
           sx={{ alignItems: { md: "center" }, justifyContent: "space-between" }}
         >
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <RestaurantMenuOutlinedIcon sx={{ fontSize: 34, color: "#0a2540" }} />
-            <Typography
-              component="h1"
-              sx={{
-                color: "#0a2540",
-                fontSize: { xs: 28, md: 34 },
-                fontWeight: 900,
-                lineHeight: 1.1,
-              }}
-            >
+            <RestaurantMenuOutlinedIcon sx={{ fontSize: 24, color: "#0a2540" }} />
+            <Typography variant="h5" sx={{ fontWeight: 900, color: "#0a2540" }}>
               Productos
             </Typography>
           </Stack>
 
-          <Button
-            type="button"
-            variant="outlined"
-            color="inherit"
-            size="large"
-            startIcon={<LabelOutlinedIcon />}
-            onClick={() => setIsTagDrawerOpen(true)}
-          >
-            Etiquetas
-          </Button>
           <Button
             type="button"
             variant="contained"
@@ -191,17 +173,17 @@ export function ProductTable({ initialProducts, categories, tags: initialTags }:
           </Button>
         </Stack>
 
-        <TableContainer component={Paper} elevation={0} sx={{ p: 3 }}>
-          <Table sx={{ minWidth: 900 }}>
+        <TableContainer component={Paper} elevation={0} sx={{ p: { xs: 1, sm: 3 }, overflowX: "auto" }}>
+          <Table sx={{ minWidth: 700, "& .MuiTableCell-root": { fontSize: 14 } }}>
             <TableHead>
-              <TableRow>
-                <TableCell sx={{ width: 60 }}>Ícono</TableCell>
-                <TableCell>Nombre</TableCell>
-                <TableCell sx={{ width: 150 }}>Categoría</TableCell>
-                <TableCell sx={{ width: 120 }}>Precio</TableCell>
-                <TableCell sx={{ width: 100 }}>Estado</TableCell>
-                <TableCell sx={{ width: 110 }}>Restricción</TableCell>
-                <TableCell align="right" sx={{ width: 110 }}>Acciones</TableCell>
+              <TableRow sx={{ bgcolor: "#f8fafc" }}>
+                <TableCell sx={{ width: 60, fontWeight: 900, color: "#64748b" }}>Ícono</TableCell>
+                <TableCell sx={{ fontWeight: 900, color: "#64748b" }}>Nombre</TableCell>
+                <TableCell sx={{ width: 150, fontWeight: 900, color: "#64748b" }}>Categoría</TableCell>
+                <TableCell sx={{ width: 120, fontWeight: 900, color: "#64748b" }}>Precio</TableCell>
+                <TableCell sx={{ width: 100, fontWeight: 900, color: "#64748b" }}>Estado</TableCell>
+                <TableCell sx={{ width: 110, fontWeight: 900, color: "#64748b" }}>Restricción</TableCell>
+                <TableCell align="right" sx={{ width: 110, fontWeight: 900, color: "#64748b" }}>Acciones</TableCell>
               </TableRow>
             </TableHead>
 
@@ -232,12 +214,12 @@ export function ProductTable({ initialProducts, categories, tags: initialTags }:
                         {iconOption || !product.icon ? (
                           <ProductIcon fontSize="small" />
                         ) : (
-                          <Typography sx={{ fontSize: 18 }}>{product.icon}</Typography>
+                          <Typography sx={{ fontSize: 14 }}>{product.icon}</Typography>
                         )}
                       </TableCell>
 
                       <TableCell>
-                        <Typography sx={{ fontWeight: 900 }}>{product.name}</Typography>
+                        <Typography sx={{ fontWeight: 900, fontSize: 14 }}>{product.name}</Typography>
                         {product.comboItems.length > 0 && (
                         <Typography sx={{ color: "text.secondary", fontSize: 12, mt: 0.5 }}>
                           {product.comboItems.map((ci) => ci.name).join(" + ")}
@@ -335,7 +317,7 @@ export function ProductTable({ initialProducts, categories, tags: initialTags }:
         fullWidth
         maxWidth="xs"
       >
-        <DialogTitle sx={{ fontSize: 24, fontWeight: 900, pb: 1 }}>
+        <DialogTitle sx={{ fontSize: 18, fontWeight: 900, pb: 1 }}>
           Confirmar eliminación
         </DialogTitle>
 

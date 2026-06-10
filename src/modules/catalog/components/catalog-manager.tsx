@@ -1,6 +1,7 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import Alert from "@mui/material/Alert";
@@ -159,11 +160,9 @@ export function CatalogManager({ initialCategories, initialTags }: Props) {
   return (
     <Box>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 3 }}>
-        <Typography sx={{ fontSize: 28, fontWeight: 900, color: "#0a2540" }}>
+        <CategoryOutlinedIcon sx={{ fontSize: 24, color: "#0a2540" }} />
+        <Typography variant="h5" sx={{ fontWeight: 900, color: "#0a2540" }}>
           Catálogo y Etiquetas
-        </Typography>
-        <Typography sx={{ fontSize: 24 }}>
-          
         </Typography>
       </Stack>
 
@@ -172,7 +171,7 @@ export function CatalogManager({ initialCategories, initialTags }: Props) {
         {/* ══════ CATEGORÍAS ══════ */}
         <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 2 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
-            <Typography sx={{ fontSize: 18, fontWeight: 900, color: "#0a2540" }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 900, color: "#0a2540" }}>
               Categorías de Producto
             </Typography>
             <Chip label={categories.length} size="small"
@@ -230,7 +229,7 @@ export function CatalogManager({ initialCategories, initialTags }: Props) {
                       <CategoryIconDisplay iconKey={cat.icon} sx={{ fontSize: 20, color: "#475569" }} />
                     </Box>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>
                         {cat.name}
                       </Typography>
                       <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
@@ -307,7 +306,7 @@ export function CatalogManager({ initialCategories, initialTags }: Props) {
         {/* ══════ ETIQUETAS ══════ */}
         <Paper elevation={0} sx={{ flex: 1, p: 3, borderRadius: 2 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
-            <Typography sx={{ fontSize: 18, fontWeight: 900, color: "#0a2540" }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 900, color: "#0a2540" }}>
               Etiquetas de Restricción
             </Typography>
             <Chip label={tags.length} size="small"
@@ -322,7 +321,7 @@ export function CatalogManager({ initialCategories, initialTags }: Props) {
               <Box key={tag.id}>
                 {idx > 0 && <Divider />}
                 <Stack direction="row" sx={{ alignItems: "center", py: 1.5, gap: 1.5 }}>
-                  <Typography sx={{ flex: 1, fontWeight: 700, fontSize: 14, color: "#1e293b" }}>
+                  <Typography sx={{ flex: 1, fontWeight: 700, fontSize: 13, color: "#1e293b" }}>
                     {tag.name}
                   </Typography>
                   <Tooltip title="Eliminar etiqueta">

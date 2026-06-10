@@ -14,6 +14,7 @@ const studentSelect = {
     balance: true,
     isActive: true,
     guardianWhatsapp: true,
+    tiqueteraExpiresAt: true,
     createdAt: true,
     _count: {
         select: {
@@ -38,6 +39,13 @@ function normalizeOptionalText(value?: string | null) {
     return trimmed ? trimmed : null;
 }
 
+function calculateExpiresAt(type: string, from: Date): Date | null {
+    if (type === "weekly")   return new Date(from.getTime() + 7  * 86400000);
+    if (type === "biweekly") return new Date(from.getTime() + 15 * 86400000);
+    if (type === "monthly")  return new Date(from.getTime() + 30 * 86400000);
+    return null;
+}
+
 function toStudentDto(student: StudentWithCounts): StudentDto {
     return {
         id: student.id,
@@ -47,6 +55,7 @@ function toStudentDto(student: StudentWithCounts): StudentDto {
         balance: student.balance,
         isActive: student.isActive,
         guardianWhatsapp: student.guardianWhatsapp,
+        tiqueteraExpiresAt: student.tiqueteraExpiresAt?.toISOString() ?? null,
         createdAt: student.createdAt.toISOString(),
         salesCount: student._count.sales,
         rechargesCount: student._count.recharges,
@@ -77,6 +86,7 @@ export async function createStudent(input: CreateStudentInput) {
             type: input.type,
             balance: input.balance,
             guardianWhatsapp: normalizeOptionalText(input.guardianWhatsapp),
+            tiqueteraExpiresAt: calculateExpiresAt(input.type, new Date()),
             restrictions: validTagIds.length > 0
                 ? { create: validTagIds.map((tagId) => ({ tagId })) }
                 : undefined,
@@ -94,6 +104,9 @@ export async function updateStudent(id: string, input: UpdateStudentInput) {
             ...(input.name !== undefined && { name: input.name }),
             ...(input.grade !== undefined && { grade: input.grade }),
             ...(input.type !== undefined && { type: input.type }),
+            ...(input.type !== undefined && {
+                tiqueteraExpiresAt: calculateExpiresAt(input.type, new Date()),
+            }),
             ...(input.balance !== undefined && { balance: input.balance }),
             ...(input.isActive !== undefined && { isActive: input.isActive }),
             ...(input.guardianWhatsapp !== undefined && {

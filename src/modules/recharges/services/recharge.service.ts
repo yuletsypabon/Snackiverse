@@ -9,7 +9,6 @@ export async function createRecharge(input: CreateRechargeInput): Promise<Rechar
 
   if (!student) throw new Error("Estudiante no encontrado.");
   if (!student.isActive) throw new Error("El estudiante está inactivo.");
-  if (student.type !== "prepaid") throw new Error("Solo se pueden recargar estudiantes con modalidad prepago.");
 
   const [recharge, updated] = await prisma.$transaction([
     prisma.recharge.create({

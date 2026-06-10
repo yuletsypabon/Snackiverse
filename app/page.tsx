@@ -10,16 +10,6 @@ export default function HomePage() {
       }}
     >
       <Stack spacing={3}>
-        <Typography
-          component="h1"
-          sx={{
-            fontSize: 28,
-            fontWeight: 900,
-            color: "#0a2540",
-          }}
-        >
-          SnackieVerse
-        </Typography>
         <LoginForm />
       </Stack>
     </Box>

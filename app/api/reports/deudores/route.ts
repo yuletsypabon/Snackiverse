@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   const type = req.nextUrl.searchParams.get("type") ?? "all";
 
-  // Morosos = prepago con saldo negativo
+  // Deudores = prepago con saldo negativo
   const where = {
     isActive: true,
     type: "prepaid" as const,

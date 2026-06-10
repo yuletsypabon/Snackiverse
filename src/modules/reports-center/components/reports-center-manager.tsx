@@ -1,9 +1,11 @@
 "use client";
 
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -25,7 +27,7 @@ import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 import { formatCurrency } from "@/lib/currency";
 
@@ -66,7 +68,7 @@ function formatDate(iso: string) {
 }
 
 // ── Tab 1: Ventas detalladas ───────────────────────────────────────────────
-function VentasDetalladas() {
+export function VentasDetalladas() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [rows, setRows] = useState<SaleRow[]>([]);
@@ -122,8 +124,8 @@ function VentasDetalladas() {
             </Typography>
           ) : (
             <>
-              <TableContainer>
-                <Table sx={{ minWidth: 900 }}>
+              <TableContainer sx={{ overflowX: "auto" }}>
+                <Table sx={{ minWidth: 750 }}>
                   <TableHead>
                     <TableRow sx={{ bgcolor: "#f8fafc" }}>
                       {["FECHA", "ESTUDIANTE", "GRADO", "PRODUCTO", "CANT.", "VALOR", "VENDEDOR", "TELÉFONO"].map((h) => (
@@ -162,7 +164,7 @@ function VentasDetalladas() {
 }
 
 // ── Tab 2: Paz y Salvo ────────────────────────────────────────────────────
-function PazYSalvo() {
+export function PazYSalvo() {
   const [students, setStudents] = useState<StudentEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -181,7 +183,7 @@ function PazYSalvo() {
     <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
         <CheckCircleOutlinedIcon sx={{ color: "#16a34a" }} />
-        <Typography sx={{ fontWeight: 900, fontSize: 16 }}>Usuarios Paz y Salvo</Typography>
+        <Typography sx={{ fontWeight: 900, fontSize: 15 }}>Usuarios Paz y Salvo</Typography>
       </Stack>
       <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
         Estudiantes sin deudas pendientes.
@@ -198,7 +200,7 @@ function PazYSalvo() {
 
       {loaded && (
         students.length === 0 ? (
-          <Typography sx={{ color: "text.secondary", fontSize: 14 }}>No hay estudiantes paz y salvo.</Typography>
+          <Typography sx={{ color: "text.secondary", fontSize: 13 }}>No hay estudiantes paz y salvo.</Typography>
         ) : (
           <Stack spacing={0}>
             {students.map((s, i) => (
@@ -206,7 +208,7 @@ function PazYSalvo() {
                 {i > 0 && <Divider />}
                 <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", py: 1.5 }}>
                   <Box>
-                    <Typography sx={{ fontWeight: 800, fontSize: 14 }}>{s.name}</Typography>
+                    <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{s.name}</Typography>
                     <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
                       {s.grade} · {TYPE_LABELS[s.type] ?? s.type}
                     </Typography>
@@ -215,7 +217,7 @@ function PazYSalvo() {
                     label="Al día"
                     size="small"
                     icon={<CheckCircleOutlinedIcon />}
-                    sx={{ bgcolor: "#d7f4e4", color: "#008c49", fontWeight: 900, "& .MuiChip-icon": { color: "#008c49", fontSize: 14 } }}
+                    sx={{ bgcolor: "#d7f4e4", color: "#008c49", fontWeight: 900, "& .MuiChip-icon": { color: "#008c49", fontSize: 13 } }}
                   />
                 </Stack>
               </Box>
@@ -227,8 +229,8 @@ function PazYSalvo() {
   );
 }
 
-// ── Tab 3: Morosos ────────────────────────────────────────────────────────
-function Morosos() {
+// ── Tab 3: Deudores ────────────────────────────────────────────────────────
+export function Deudores() {
   const [type, setType] = useState("all");
   const [students, setStudents] = useState<StudentEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -237,7 +239,7 @@ function Morosos() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/reports/morosos?type=${type}`);
+      const res = await fetch(`/api/reports/deudores?type=${type}`);
       const data = await res.json();
       setStudents(data.students ?? []);
       setLoaded(true);
@@ -248,7 +250,7 @@ function Morosos() {
     <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 2 }}>
         <WarningAmberOutlinedIcon sx={{ color: "#f59e0b" }} />
-        <Typography sx={{ fontWeight: 900, fontSize: 16 }}>Usuarios Morosos</Typography>
+        <Typography sx={{ fontWeight: 900, fontSize: 15 }}>Usuarios Deudores</Typography>
       </Stack>
 
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: "flex-end", mb: 2.5 }}>
@@ -274,7 +276,7 @@ function Morosos() {
 
       {loaded && (
         students.length === 0 ? (
-          <Alert severity="success">No hay usuarios morosos. ¡Todo al día!</Alert>
+          <Alert severity="success">No hay deudores. ¡Todo al día!</Alert>
         ) : (
           <Stack spacing={0}>
             {students.map((s, i) => (
@@ -282,7 +284,7 @@ function Morosos() {
                 {i > 0 && <Divider />}
                 <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", py: 1.5 }}>
                   <Box>
-                    <Typography sx={{ fontWeight: 800, fontSize: 14 }}>{s.name}</Typography>
+                    <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{s.name}</Typography>
                     <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
                       {s.grade} · {TYPE_LABELS[s.type] ?? s.type}
                       {s.guardianWhatsapp ? ` · ${s.guardianWhatsapp}` : ""}
@@ -310,8 +312,8 @@ export function ReportsCenterManager() {
   return (
     <Stack spacing={3}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-        <AssessmentOutlinedIcon sx={{ fontSize: 34, color: "#0a2540" }} />
-        <Typography sx={{ fontSize: { xs: 28, md: 34 }, fontWeight: 900, color: "#0a2540" }}>
+        <ReceiptLongOutlinedIcon sx={{ fontSize: 24, color: "#0a2540" }} />
+        <Typography variant="h5" sx={{ fontWeight: 900, color: "#0a2540" }}>
           Centro de Informes
         </Typography>
       </Stack>
@@ -320,28 +322,17 @@ export function ReportsCenterManager() {
         value={tab}
         onChange={(_, v) => setTab(v)}
         sx={{ borderBottom: "1px solid #e2e8f0" }}
+        variant="scrollable"
       >
-        <Tab
-          label="Ventas detalladas"
-          icon={<AssessmentOutlinedIcon sx={{ fontSize: 16 }} />}
-          iconPosition="start"
-        />
-        <Tab
-          label="Paz y Salvo"
-          icon={<CheckCircleOutlinedIcon sx={{ fontSize: 16 }} />}
-          iconPosition="start"
-        />
-        <Tab
-          label="Morosos"
-          icon={<WarningAmberOutlinedIcon sx={{ fontSize: 16 }} />}
-          iconPosition="start"
-        />
+        <Tab label="Ventas detalladas" icon={<AssessmentOutlinedIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
+        <Tab label="Paz y Salvo" icon={<CheckCircleOutlinedIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
+        <Tab label="Deudores" icon={<WarningAmberOutlinedIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
       </Tabs>
 
       <Box>
         {tab === 0 && <VentasDetalladas />}
         {tab === 1 && <PazYSalvo />}
-        {tab === 2 && <Morosos />}
+        {tab === 2 && <Deudores />}
       </Box>
     </Stack>
   );
