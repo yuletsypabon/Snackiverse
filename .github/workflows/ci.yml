@@ -25,8 +25,8 @@ jobs:
       
       - name: Clean install (if needed)
         run: |
-          rm -rf node_modules package-lock.json
-          npm ci
+            rm -rf node_modules package-lock.json
+            npm ci
 
       - name: Run tests
         run: npx vitest run
