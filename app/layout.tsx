@@ -6,6 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import theme from "@/theme";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,9 +32,9 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable}`}
-      style={{ WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" } as React.CSSProperties}
+      style={{ WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale", height: "100%" } as React.CSSProperties}
     >
-      <body>
+      <body style={{ height: "100%", margin: 0 }} suppressHydrationWarning>
         <AppRouterCacheProvider options={{ enableCssLayer: true }}>
           <ThemeProvider theme={theme}>
             <CssBaseline />
