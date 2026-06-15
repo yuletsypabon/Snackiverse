@@ -4,6 +4,7 @@ import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
+import MoneyOffOutlinedIcon from "@mui/icons-material/MoneyOffOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -49,6 +50,7 @@ type StudentEntry = {
   grade: string;
   type: string;
   balance: number;
+  tiqueteraExpiresAt?: string | null;
   guardianWhatsapp?: string | null;
 };
 
@@ -259,10 +261,13 @@ export function PazYSalvo() {
                     <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{s.name}</Typography>
                     <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
                       {s.grade} · {TYPE_LABELS[s.type] ?? s.type}
+                      {s.type !== "prepaid" && s.tiqueteraExpiresAt && (
+                        <> · vence {new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short" }).format(new Date(s.tiqueteraExpiresAt))}</>
+                      )}
                     </Typography>
                   </Box>
                   <Chip
-                    label="Al día"
+                    label={s.type === "prepaid" ? formatCurrency(s.balance) : "Al día"}
                     size="small"
                     icon={<CheckCircleOutlinedIcon />}
                     sx={{ bgcolor: "#d7f4e4", color: "#008c49", fontWeight: 900, "& .MuiChip-icon": { color: "#008c49", fontSize: 13 } }}
@@ -374,14 +379,12 @@ export function ReportsCenterManager() {
       >
         <Tab label="Ventas detalladas" icon={<AssessmentOutlinedIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
         <Tab label="Paz y Salvo" icon={<CheckCircleOutlinedIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
-        <Tab label="Deudores" icon={<WarningAmberOutlinedIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
+        <Tab label="Deudores" icon={<MoneyOffOutlinedIcon sx={{ fontSize: 15 }} />} iconPosition="start" />
       </Tabs>
 
-      <Box>
-        {tab === 0 && <VentasDetalladas />}
-        {tab === 1 && <PazYSalvo />}
-        {tab === 2 && <Deudores />}
-      </Box>
+      {tab === 0 && <VentasDetalladas />}
+      {tab === 1 && <PazYSalvo />}
+      {tab === 2 && <Deudores />}
     </Stack>
   );
 }

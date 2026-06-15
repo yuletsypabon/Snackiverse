@@ -6,9 +6,10 @@ export default function LoginPage() {
         <Box
             component="main"
             sx={{
-                display: "grid",
-                placeItems: "center",
-                minHeight: "100vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "100dvh",
                 bgcolor: "#17313b",
                 p: { xs: 2, sm: 3, lg: 5 },
             }}
@@ -17,4 +18,3 @@ export default function LoginPage() {
         </Box>
     );
 }
-

@@ -79,7 +79,7 @@ describe("createStudent", () => {
         const row = makeStudentRow({ type: "weekly", tiqueteraExpiresAt: new Date() });
         vi.mocked(prisma.student.create).mockResolvedValue(row as never);
 
-        await createStudent({ name: "Ana Torres", grade: "2°", type: "weekly", restrictionTagIds: [] });
+        await createStudent({ name: "Ana Torres", grade: "2°", type: "weekly", balance: 0, restrictionTagIds: [] });
 
         const callArg = vi.mocked(prisma.student.create).mock.calls[0][0];
         expect(callArg.data.tiqueteraExpiresAt).toBeInstanceOf(Date);
@@ -89,7 +89,7 @@ describe("createStudent", () => {
         const row = makeStudentRow({ tiqueteraExpiresAt: null });
         vi.mocked(prisma.student.create).mockResolvedValue(row as never);
 
-        await createStudent({ name: "Luis Ramos", grade: "3°", type: "prepaid", restrictionTagIds: [] });
+        await createStudent({ name: "Luis Ramos", grade: "3°", type: "prepaid", balance: 0, restrictionTagIds: [] });
 
         const callArg = vi.mocked(prisma.student.create).mock.calls[0][0];
         expect(callArg.data.tiqueteraExpiresAt).toBeNull();
