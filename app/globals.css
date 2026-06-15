@@ -1,5 +1,20 @@
 /* Global Styles */
 
+.login-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #17313b;
+  padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
 :root {
   --background: #edf2f8;
   --foreground: #171717;

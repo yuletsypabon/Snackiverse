@@ -60,6 +60,17 @@ export function LoginForm() {
   };
 
   return (
+    <div style={{
+      position: "fixed",
+      top: 0, left: 0, right: 0, bottom: 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#17313b",
+      padding: "16px",
+      overflowY: "auto",
+      boxSizing: "border-box",
+    }}>
     <Box
       sx={{
         display: "grid",
@@ -365,5 +376,6 @@ export function LoginForm() {
         </Box>
       </Box>
     </Box>
+    </div>
   );
 }
