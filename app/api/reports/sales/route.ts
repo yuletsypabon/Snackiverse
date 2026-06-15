@@ -9,6 +9,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const page = Number(searchParams.get("page") ?? "1");
+  const pageSize = Number(searchParams.get("pageSize") ?? "100");
 
   if (!from || !to) {
     return NextResponse.json({ error: "Faltan parámetros." }, { status: 400 });
@@ -18,25 +20,32 @@ export async function GET(req: NextRequest) {
   const toDate = new Date(to);
   toDate.setHours(23, 59, 59, 999);
 
-  const sales = await prisma.sale.findMany({
-    where: { createdAt: { gte: fromDate, lte: toDate } },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      total: true,
-      createdAt: true,
-      student: { select: { name: true, grade: true, guardianWhatsapp: true } },
-      vendor: { select: { name: true } },
-      saleItems: {
-        select: {
-          quantity: true,
-          unitPrice: true,
-          subtotal: true,
-          product: { select: { name: true } },
+  const where = { createdAt: { gte: fromDate, lte: toDate } };
+
+  const [totalSales, sales] = await prisma.$transaction([
+    prisma.sale.count({ where }),
+    prisma.sale.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        total: true,
+        createdAt: true,
+        student: { select: { name: true, grade: true, guardianWhatsapp: true } },
+        vendor: { select: { name: true } },
+        saleItems: {
+          select: {
+            quantity: true,
+            unitPrice: true,
+            subtotal: true,
+            product: { select: { name: true } },
+          },
         },
       },
-    },
-  });
+    }),
+  ]);
 
   // Una fila por ítem de venta
   const rows = sales.flatMap((s) =>
@@ -54,5 +63,5 @@ export async function GET(req: NextRequest) {
     }))
   );
 
-  return NextResponse.json({ rows });
+  return NextResponse.json({ rows, total: totalSales, page, pageSize });
 }

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-
 import { authorizeAdmin } from "@/lib/api-auth";
 import { createStudentSchema } from "@/modules/students/schemas/student.schema";
 import {
@@ -14,10 +13,7 @@ export async function GET() {
 
     const students = await listStudents();
 
-    return NextResponse.json({
-        success: true,
-        students,
-    });
+    return NextResponse.json({ success: true, students });
 }
 
 export async function POST(req: Request) {

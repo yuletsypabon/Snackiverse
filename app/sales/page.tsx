@@ -5,18 +5,20 @@ import {
     listCategories,
 } from "@/modules/products/services/product.service";
 import { listStudents } from "@/modules/students/services/student.service";
+import { getSessionUser } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function SalesPage() {
-    const [products, categories, students] = await Promise.all([
+    const [products, categories, students, session] = await Promise.all([
         listProducts(),
         listCategories(),
         listStudents(),
+        getSessionUser(),
     ]);
 
     return (
-        <AdminShell activeHref="/sales">
+        <AdminShell activeHref="/sales" role={session?.role}>
             <SaleRegister
                 products={products}
                 categories={categories}

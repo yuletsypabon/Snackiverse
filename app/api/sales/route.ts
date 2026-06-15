@@ -36,6 +36,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (error instanceof Error) {
+      if (error.message === "Estudiante no encontrado.")
+        return NextResponse.json({ error: error.message }, { status: 404 });
+
+      if (
+        error.message === "El estudiante está inactivo." ||
+        error.message === "Uno o más productos no existen o están inactivos."
+      )
+        return NextResponse.json({ error: error.message }, { status: 422 });
+
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 

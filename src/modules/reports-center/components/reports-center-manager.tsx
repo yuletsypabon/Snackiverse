@@ -74,20 +74,43 @@ export function VentasDetalladas() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  // page: página actual. total: número de ventas en el rango (no ítems).
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  const load = useCallback(async () => {
+  const PAGE_SIZE = 100;
+
+  // currentPage se pasa como parámetro para poder llamar load() con la página
+  // correcta sin depender del estado (que puede estar desactualizado en el cierre).
+  const load = useCallback(async (currentPage = 1) => {
     if (!from || !to) { setError("Selecciona un rango de fechas."); return; }
     setLoading(true); setError(null);
     try {
-      const res = await fetch(`/api/reports/sales?from=${from}&to=${to}`);
+      const res = await fetch(
+        `/api/reports/sales?from=${from}&to=${to}&page=${currentPage}&pageSize=${PAGE_SIZE}`
+      );
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
       setRows(data.rows);
+      setTotal(data.total);   // total de ventas en el rango (para calcular páginas)
       setLoaded(true);
     } catch { setError("Error de conexión."); }
     finally { setLoading(false); }
   }, [from, to]);
 
+  // Cuando el usuario hace clic en "Cargar", siempre empieza desde la página 1.
+  const handleLoad = useCallback(() => {
+    setPage(1);
+    load(1);
+  }, [load]);
+
+  // Cambiar de página: actualiza el estado y dispara el fetch.
+  const goToPage = useCallback((next: number) => {
+    setPage(next);
+    load(next);
+  }, [load]);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
   const totalGeneral = rows.reduce((s, r) => s + r.subtotal, 0);
 
   return (
@@ -105,7 +128,7 @@ export function VentasDetalladas() {
           <Button
             variant="contained"
             startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <RefreshOutlinedIcon />}
-            onClick={load}
+            onClick={handleLoad}
             disabled={loading}
             sx={{ bgcolor: "#1f8dd6", "&:hover": { bgcolor: "#1677b5" }, fontWeight: 800, minWidth: 110 }}
           >
@@ -149,11 +172,37 @@ export function VentasDetalladas() {
                 </Table>
               </TableContainer>
               <Box sx={{ px: 3, py: 1.5, bgcolor: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography sx={{ fontSize: 13, color: "#64748b" }}>{rows.length} ítem{rows.length !== 1 ? "s" : ""}</Typography>
+                <Typography sx={{ fontSize: 13, color: "#64748b" }}>
+                  {total} venta{total !== 1 ? "s" : ""} en el período
+                </Typography>
                 <Typography sx={{ fontWeight: 900, fontSize: 15, color: "#0a2540" }}>
                   Total: {formatCurrency(totalGeneral)}
                 </Typography>
               </Box>
+              {/* Controles de paginación — solo aparecen si hay más de una página */}
+              {totalPages > 1 && (
+                <Box sx={{ px: 3, py: 1.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 2, borderTop: "1px solid #f1f5f9" }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={page === 1 || loading}
+                    onClick={() => goToPage(page - 1)}
+                  >
+                    Anterior
+                  </Button>
+                  <Typography sx={{ fontSize: 13, color: "#64748b" }}>
+                    Página {page} de {totalPages}
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={page === totalPages || loading}
+                    onClick={() => goToPage(page + 1)}
+                  >
+                    Siguiente
+                  </Button>
+                </Box>
+              )}
             </>
           )}
         </Paper>

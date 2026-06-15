@@ -36,23 +36,26 @@ const DRAWER_WIDTH = 284;
 const COLLAPSED_WIDTH = 72;
 
 const navigation = [
-    { icon: HomeOutlinedIcon, label: "Inicio", href: "/dashboard" },
-    { icon: PointOfSaleOutlinedIcon, label: "Registrar Venta", href: "/sales" },
-    { icon: BadgeOutlinedIcon, label: "Estudiantes", href: "/students", section: "ADMINISTRACION" },
-    { icon: RestaurantMenuOutlinedIcon, label: "Productos", href: "/products" },
-    { icon: CategoryOutlinedIcon, label: "Catálogo y Etiquetas", href: "/catalog" },
-    { icon: SavingsOutlinedIcon, label: "Recargas", href: "/recharges" },
-    { icon: CreditCardOutlinedIcon, label: "Pagos", href: "/payments" },
-    { icon: AssessmentOutlinedIcon, label: "Centro de Informes", href: "/reports-center" },
-    { icon: GroupsOutlinedIcon, label: "Vendedores", href: "/users" },
+    { icon: HomeOutlinedIcon,            label: "Inicio",               href: "/dashboard",      adminOnly: true },
+    { icon: PointOfSaleOutlinedIcon,     label: "Registrar Venta",      href: "/sales",          adminOnly: false },
+    { icon: BadgeOutlinedIcon,           label: "Estudiantes",          href: "/students",       adminOnly: true,  section: "ADMINISTRACION" },
+    { icon: RestaurantMenuOutlinedIcon,  label: "Productos",            href: "/products",       adminOnly: true },
+    { icon: CategoryOutlinedIcon,        label: "Catálogo y Etiquetas", href: "/catalog",        adminOnly: true },
+    { icon: SavingsOutlinedIcon,         label: "Recargas",             href: "/recharges",      adminOnly: true },
+    { icon: CreditCardOutlinedIcon,      label: "Pagos",                href: "/payments",       adminOnly: true },
+    { icon: AssessmentOutlinedIcon,      label: "Centro de Informes",   href: "/reports-center", adminOnly: true },
+    { icon: GroupsOutlinedIcon,          label: "Vendedores",           href: "/users",          adminOnly: true },
 ];
 
 type AdminShellProps = {
     activeHref: string;
     children: React.ReactNode;
+    role?: string;
 };
 
-function SidebarContent({ activeHref, collapsed, onToggle }: { activeHref: string; collapsed: boolean; onToggle: () => void }) {
+function SidebarContent({ activeHref, collapsed, onToggle, role }: { activeHref: string; collapsed: boolean; onToggle: () => void; role?: string }) {
+    const isAdmin = role === "admin";
+    const visibleNav = navigation.filter((item) => !item.adminOnly || isAdmin);
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
             {/* Logo + botón toggle */}
@@ -119,16 +122,19 @@ function SidebarContent({ activeHref, collapsed, onToggle }: { activeHref: strin
                     px: 2,
                 }}>
                     <Typography sx={{ flexGrow: 1, fontSize: 14, fontWeight: 900 }}>
-                        Administrador
+                        {isAdmin ? "Administrador" : "Vendedor"}
                     </Typography>
-                    <Chip label="admin" size="small"
-                        sx={{ bgcolor: "#198754", color: "white", fontSize: 11, fontWeight: 900 }} />
+                    <Chip
+                        label={isAdmin ? "admin" : "vendedor"}
+                        size="small"
+                        sx={{ bgcolor: isAdmin ? "#198754" : "#1f8dd6", color: "white", fontSize: 11, fontWeight: 900 }}
+                    />
                 </Stack>
             )}
 
             {/* Navegación */}
             <List disablePadding sx={{ flexGrow: 1, py: 1, overflowY: "auto", overflowX: "hidden" }}>
-                {navigation.map((item) => {
+                {visibleNav.map((item) => {
                     const Icon = item.icon;
                     const active = item.href === activeHref;
                     return (
@@ -194,7 +200,7 @@ function SidebarContent({ activeHref, collapsed, onToggle }: { activeHref: strin
     );
 }
 
-export function AdminShell({ activeHref, children }: AdminShellProps) {
+export function AdminShell({ activeHref, children, role }: AdminShellProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
 
@@ -250,6 +256,7 @@ export function AdminShell({ activeHref, children }: AdminShellProps) {
                     activeHref={activeHref}
                     collapsed={false}
                     onToggle={() => setMobileOpen(false)}
+                    role={role}
                 />
             </Drawer>
 
@@ -276,6 +283,7 @@ export function AdminShell({ activeHref, children }: AdminShellProps) {
                     activeHref={activeHref}
                     collapsed={collapsed}
                     onToggle={() => setCollapsed((v) => !v)}
+                    role={role}
                 />
             </Box>
 

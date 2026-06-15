@@ -25,6 +25,7 @@ import Typography from "@mui/material/Typography";
 import { AdminShell } from "@/modules/dashboard/components/admin-shell";
 import { getDashboardData } from "@/modules/dashboard/services/dashboard.service";
 import { formatCurrency } from "@/lib/currency";
+import { getSessionUser } from "@/lib/api-auth";
 
 function formatDashboardDate() {
   return new Intl.DateTimeFormat("es-CO", {
@@ -43,7 +44,7 @@ function formatDateTime(iso: string) {
 }
 
 export default async function DashboardPage() {
-  const data = await getDashboardData();
+  const [data, session] = await Promise.all([getDashboardData(), getSessionUser()]);
 
   // Comparativa ventas hoy vs ayer
   const trend = data.salesYesterdayTotal > 0
@@ -95,7 +96,7 @@ export default async function DashboardPage() {
   };
 
   return (
-    <AdminShell activeHref="/dashboard">
+    <AdminShell activeHref="/dashboard" role={session?.role}>
       <Stack spacing={{ xs: 1.5, md: 2.5 }}>
 
         {/* Encabezado */}
@@ -297,7 +298,7 @@ export default async function DashboardPage() {
                     })}
                   </Stack>
                 )}
-              </Paper>
+                   </Paper>
 
             </Stack>
           </Grid>

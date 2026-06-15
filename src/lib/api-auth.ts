@@ -31,6 +31,22 @@ export async function authorizeAdmin(): Promise<NextResponse | null> {
 }
 
 /**
+ * Lee el token de las cookies y retorna el usuario de sesión.
+ * Para usar en Server Components (páginas) — nunca en API routes.
+ */
+export async function getSessionUser(): Promise<{ userId: string; role: string } | null> {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+    if (!token) return null;
+    const session = await verifyToken(token);
+    if (!session) return null;
+    return {
+        userId: session["userId"] as string,
+        role: session["role"] as string,
+    };
+}
+
+/**
  * Detecta errores de "registro no encontrado" de Prisma (código P2025).
  */
 export function isPrismaNotFoundError(error: unknown): boolean {
