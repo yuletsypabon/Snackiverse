@@ -64,7 +64,7 @@ export function LoginForm() {
       position: "fixed",
       top: 0, left: 0, right: 0, bottom: 0,
       display: "flex",
-      alignItems: "center",
+      alignItems: "flex-start",
       justifyContent: "center",
       backgroundColor: "#17313b",
       padding: "16px",
@@ -75,23 +75,59 @@ export function LoginForm() {
       sx={{
         display: "grid",
         width: "100%",
-        maxWidth: "1030px",
+        maxWidth: { xs: "420px", lg: "1030px" },
         overflow: "hidden",
-        borderRadius: "28px",
+        borderRadius: { xs: "20px", lg: "28px" },
         bgcolor: "white",
         boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
         gridTemplateColumns: { xs: "1fr", lg: "1.08fr 0.92fr" },
         minHeight: { xs: "auto", lg: "558px" },
+        margin: "auto",
       }}
     >
-      {/* Sidebar izquierdo - Selección de rol */}
+      {/* Banner superior - solo en móvil */}
+      <Box
+        sx={{
+          display: { xs: "flex", lg: "none" },
+          background: "linear-gradient(135deg, #073818 0%, #17632f 50%, #25a957 100%)",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 3,
+          px: 2,
+          gap: 1,
+        }}
+      >
+        <Image
+          src="/logo/adminpanel.png"
+          alt="Snackie Verse Logo"
+          width={200}
+          height={153}
+          priority
+          style={{ width: "100%", height: "auto", maxWidth: "200px" }}
+        />
+        <Typography
+          sx={{
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            color: "#d1d5db",
+            textAlign: "center",
+            letterSpacing: "0.08em",
+          }}
+        >
+          Sistema de gestión de cafetería escolar
+        </Typography>
+      </Box>
+
+      {/* Sidebar izquierdo - solo en desktop */}
       <Box
         sx={{
           background: "linear-gradient(135deg, #073818 0%, #17632f 50%, #25a957 100%)",
           px: { xs: 3, sm: 4 },
           py: 5,
           color: "white",
-          display: "flex",
+          display: { xs: "none", lg: "flex" },
           alignItems: "center",
           justifyContent: "center",
         }}
