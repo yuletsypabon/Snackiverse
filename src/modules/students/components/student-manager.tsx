@@ -39,6 +39,8 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 import { formatCurrency } from "@/lib/currency";
 import {
@@ -120,6 +122,10 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
     const [studentPendingDelete, setStudentPendingDelete] = useState<StudentDto | null>(null);
     const [deletingStudent, setDeletingStudent] = useState(false);
 
+    // En móvil el modal se abre a pantalla completa para que quepan todos los campos
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
     // Refrescar etiquetas cada vez que se abre el modal
     useEffect(() => {
         if (!isModalOpen) return;
@@ -131,7 +137,10 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
 
     const generateGradeFilters = () => {
         const uniqueGrades = [...new Set(students.map((s) => s.grade))];
-        return ["Todos", ...uniqueGrades.sort((a, b) => a.localeCompare(b, "es"))];
+        return [
+            "Todos",
+            ...uniqueGrades.sort((a, b) => a.localeCompare(b, "es", { numeric: true })),
+        ];
     };
 
     const availableGradeFilters = generateGradeFilters();
@@ -584,8 +593,9 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                 onClose={closeModal}
                 fullWidth
                 maxWidth="sm"
+                fullScreen={fullScreen}
                 slotProps={{
-                    paper: { sx: { borderRadius: 3, overflow: "visible" } },
+                    paper: { sx: { borderRadius: fullScreen ? 0 : 3 } },
                 }}
             >
                 <Box component="form" onSubmit={submitForm}>
@@ -593,7 +603,7 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                         {editingStudent ? "Editar Estudiante" : "Agregar Estudiante"}
                     </DialogTitle>
 
-                    <DialogContent sx={{ pt: "20px !important", overflow: "visible" }}>
+                    <DialogContent sx={{ pt: "20px !important" }}>
                         <Stack spacing={2.25} sx={{ mt: 0.5 }}>
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                                 <TextField
