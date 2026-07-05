@@ -27,22 +27,31 @@ jobs:
 
       - name: Run tests
         run: npx vitest run
-
+      
+      - name: Apply DB migrations (prod)
+        if: github.ref == 'refs/heads/main'
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
       - name: Build
         run: npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
+      - name: Prepare standalone bundle
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+
       - name: Upload build artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: next-build
-          path: |
-            .next/standalone
-            .next/static
-            public
+          path: .next/standalone
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest

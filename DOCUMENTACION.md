@@ -16,6 +16,7 @@
 8. [Pruebas de rendimiento (k6)](#8-pruebas-de-rendimiento-k6)
 9. [Casos de prueba](#9-casos-de-prueba)
 10. [Scripts disponibles](#10-scripts-disponibles)
+11. [Despliegue y dominio](#11-despliegue-y-dominio)
 
 ---
 
@@ -47,20 +48,20 @@ El saldo de un estudiante prepago **puede quedar negativo**. Esto es comportamie
 
 ## 2. Stack tecnológico
 
-| Capa              | Tecnología                         |
-|-------------------|------------------------------------|
-| Framework         | Next.js 15 (App Router)            |
-| UI                | React 19 + MUI (Material UI) v9   |
-| Estado del servidor | TanStack React Query v5           |
-| Formularios       | React Hook Form + Zod              |
-| ORM               | Prisma v6                          |
-| Base de datos     | PostgreSQL                         |
-| Autenticación     | JWT con `jose` + cookies HTTP-only |
-| Hash de contraseñas | `bcrypt`                         |
-| Testing unitario  | Vitest                             |
-| Testing de rendimiento | k6                            |
-| Exportación de imágenes | `html-to-image`             |
-| Estilos globales  | Emotion (requerido por MUI)        |
+| Capa              | Tecnología                         | Versión       |
+|-------------------|------------------------------------|---------------|
+| Framework         | Next.js                            | ^15.0.0       |
+| UI                | React + MUI (Material UI)          | 19.2.4 / v9   |
+| Estado del servidor | TanStack React Query             | v5            |
+| Formularios       | React Hook Form + Zod              | ^7.75 / ^4.4  |
+| ORM               | Prisma                             | v6            |
+| Base de datos     | PostgreSQL (Neon cloud)            | —             |
+| Autenticación     | JWT con `jose` + cookies HTTP-only | ^6.2.3        |
+| Hash de contraseñas | `bcrypt`                         | ^6.0.0        |
+| Testing unitario  | Vitest                             | ^4.1.7        |
+| Testing de rendimiento | k6                            | —             |
+| Exportación de imágenes | `html-to-image`             | ^1.11.13      |
+| Estilos globales  | Emotion (requerido por MUI)        | ^11           |
 
 ---
 
@@ -123,8 +124,8 @@ snackiverse/
 │       ├── reports-speed.js    # Velocidad de reportes (1 VU, 10 iter.)
 │       └── stress-sales.js     # Prueba de estrés (5→30 VUs escalonado)
 │
-├── middleware.ts               # Protección de rutas por rol
-└── AGENTS.md                   # Instrucciones para agentes IA
+├── middleware.ts               # Protección de rutas por rol + rate limiting
+└── DOCUMENTACION.md            # Este archivo (ignorado por git)
 ```
 
 ### Patrón de módulos
@@ -216,21 +217,22 @@ El campo `note` puede codificar el método de pago con el formato `"método|nota
 
 ### Migraciones
 
-Las migraciones se encuentran en `prisma/migrations/`. El historial refleja la evolución del sistema:
+Las migraciones se encuentran en `prisma/migrations/`. Historial:
 
-1. `20260524225508` — Modelos de negocio base
-2. `20260525170000` — Campo `guardianWhatsapp` en Student
-3. `20260525201446` — Categorías de productos
-4. `20260526195640` — Campos de combo en productos
-5. `20260526232559` — Tags de restricción por producto
-6. `20260526233222` — Eliminación de stock de productos
-7. `20260527000000` — Corrección typo enum `biweekly`
-8. `20260527000001` — Tabla `combo_items`
-9. `20260527004113` — Reemplazo de restriction tags por `isRestricted`
-10. `20260527182328` — Tags y restricciones de estudiantes
-11. `20260528002753` — Ventas, recargas y pagos
-12. `20260528004147` — Icono en categorías
-13. `20260602181352` — Campo `tiqueteraExpiresAt` en Student
+1. `20260511220915` — Init
+2. `20260524225508` — Modelos de negocio base
+3. `20260525170000` — Campo `guardianWhatsapp` en Student
+4. `20260525201446` — Categorías de productos
+5. `20260526195640` — Campos de combo en productos
+6. `20260526232559` — Tags de restricción por producto
+7. `20260526233222` — Eliminación de stock de productos
+8. `20260527000000` — Corrección typo enum `biweekly`
+9. `20260527000001` — Tabla `combo_items`
+10. `20260527004113` — Reemplazo de restriction tags por `isRestricted`
+11. `20260527182328` — Tags y restricciones de estudiantes
+12. `20260528002753` — Ventas, recargas y pagos
+13. `20260528004147` — Icono en categorías
+14. `20260602181352` — Campo `tiqueteraExpiresAt` en Student
 
 ---
 
@@ -255,22 +257,30 @@ Las migraciones se encuentran en `prisma/migrations/`. El historial refleja la e
 
 ### Protección de rutas — `middleware.ts`
 
-El middleware intercepta todas las rutas y aplica estas reglas:
+El middleware intercepta todas las rutas, aplica rate limiting y verifica el JWT.
 
-| Rutas                        | Acceso           |
-|------------------------------|------------------|
-| `/login`                     | Público          |
-| `/api/auth/*`                | Público          |
-| `/api/reports/morosos`, `/api/reports/paz-y-salvo`, `/api/reports/pendientes`, `/api/reports/sales`, `/api/categories/*`, `/api/tags/*`, `/api/users/*`, `/api/recharges` (GET) | Solo admin |
-| Todo lo demás                | Cualquier usuario autenticado |
+**Rate limiting:**
+| Ruta          | Límite              |
+|---------------|---------------------|
+| `/api/auth/login` | 10 intentos / 15 min |
+| `/api/*`      | 200 req / min       |
 
-Las rutas de admin usan el helper `authorizeAdmin()` de `src/lib/api-auth.ts`:
+Implementado con un `Map` en memoria. No escala a múltiples instancias (aceptable para esta escala).
+
+**Control de acceso por rol:**
+
+| Rutas                                      | Acceso                          |
+|--------------------------------------------|---------------------------------|
+| `/login`, `/api/auth/*`                    | Público                         |
+| `/sales`                                   | Cualquier usuario autenticado   |
+| Todo lo demás (`/dashboard`, `/students`, `/reports`, `/reports-center`, `/users`, `/products`, `/catalog`, `/payments`, `/recharges`) | Solo admin — vendors son redirigidos a `/sales` |
+
+El helper `authorizeAdmin()` en `src/lib/api-auth.ts` se usa en las API routes de admin:
 
 ```typescript
 export async function authorizeAdmin(): Promise<NextResponse | null>
+// Retorna NextResponse con 401/403 si no autorizado, null si OK
 ```
-
-Retorna un `NextResponse` con error 401/403 si el usuario no cumple, o `null` si está autorizado.
 
 ---
 
@@ -286,13 +296,13 @@ Retorna un `NextResponse` con error 401/403 si el usuario no cumple, o `null` si
 
 ### Students (`/api/students/`)
 
-| Método | Endpoint                  | Acceso | Descripción               |
-|--------|---------------------------|--------|---------------------------|
-| GET    | `/api/students`           | Auth   | Lista todos los estudiantes |
-| POST   | `/api/students`           | Auth   | Crea un estudiante        |
-| GET    | `/api/students/[id]`      | Auth   | Obtiene un estudiante     |
-| PUT    | `/api/students/[id]`      | Auth   | Actualiza un estudiante   |
-| DELETE | `/api/students/[id]`      | Auth   | Elimina un estudiante     |
+| Método | Endpoint             | Acceso | Descripción               |
+|--------|----------------------|--------|---------------------------|
+| GET    | `/api/students`      | Auth   | Lista todos los estudiantes |
+| POST   | `/api/students`      | Auth   | Crea un estudiante        |
+| GET    | `/api/students/[id]` | Auth   | Obtiene un estudiante     |
+| PUT    | `/api/students/[id]` | Auth   | Actualiza un estudiante   |
+| DELETE | `/api/students/[id]` | Auth   | Elimina un estudiante     |
 
 ### Products (`/api/products/`)
 
@@ -305,42 +315,47 @@ Retorna un `NextResponse` con error 401/403 si el usuario no cumple, o `null` si
 
 ### Categories (`/api/categories/`)
 
-| Método | Endpoint                  | Acceso | Descripción           |
-|--------|---------------------------|--------|-----------------------|
-| GET    | `/api/categories`         | Auth   | Lista categorías      |
-| POST   | `/api/categories`         | Admin  | Crea una categoría    |
-| PUT    | `/api/categories/[id]`    | Admin  | Actualiza categoría   |
-| DELETE | `/api/categories/[id]`    | Admin  | Elimina categoría     |
+| Método | Endpoint               | Acceso | Descripción           |
+|--------|------------------------|--------|-----------------------|
+| GET    | `/api/categories`      | Auth   | Lista categorías      |
+| POST   | `/api/categories`      | Admin  | Crea una categoría    |
+| PUT    | `/api/categories/[id]` | Admin  | Actualiza categoría   |
+| DELETE | `/api/categories/[id]` | Admin  | Elimina categoría     |
 
 ### Tags (`/api/tags/`)
 
-| Método | Endpoint            | Acceso | Descripción         |
-|--------|---------------------|--------|---------------------|
-| GET    | `/api/tags`         | Auth   | Lista etiquetas     |
-| POST   | `/api/tags`         | Admin  | Crea una etiqueta   |
-| PUT    | `/api/tags/[id]`    | Admin  | Actualiza etiqueta  |
-| DELETE | `/api/tags/[id]`    | Admin  | Elimina etiqueta    |
+| Método | Endpoint         | Acceso | Descripción         |
+|--------|------------------|--------|---------------------|
+| GET    | `/api/tags`      | Auth   | Lista etiquetas     |
+| POST   | `/api/tags`      | Admin  | Crea una etiqueta   |
+| PUT    | `/api/tags/[id]` | Admin  | Actualiza etiqueta  |
+| DELETE | `/api/tags/[id]` | Admin  | Elimina etiqueta    |
 
 ### Sales (`/api/sales/`)
 
-| Método | Endpoint      | Acceso | Descripción                            |
-|--------|---------------|--------|----------------------------------------|
-| POST   | `/api/sales`  | Auth   | Registra una venta                     |
+| Método | Endpoint     | Acceso | Descripción                            |
+|--------|--------------|--------|----------------------------------------|
+| POST   | `/api/sales` | Auth   | Registra una venta                     |
 
 **Lógica de `createSale` (sale.service.ts):**
 1. Obtiene los precios reales de la BD (nunca confía en el cliente).
-2. Calcula subtotales y total.
-3. Abre una transacción Prisma (callback form):
+2. Verifica que el estudiante exista y esté activo (404 / 422 respectivamente).
+3. Calcula subtotales y total.
+4. Abre una transacción Prisma (callback form):
    - Si el estudiante es `prepaid`, descuenta el total de su saldo (puede quedar negativo).
    - Crea la venta con sus `SaleItem`.
-4. Retorna el DTO de la venta.
+5. Retorna el DTO de la venta.
+
+**Códigos HTTP:**
+- `404` — estudiante no encontrado
+- `422` — estudiante inactivo o producto inválido/inactivo
 
 ### Recharges (`/api/recharges/`)
 
-| Método | Endpoint          | Acceso | Descripción                    |
-|--------|-------------------|--------|--------------------------------|
-| GET    | `/api/recharges`  | Admin  | Lista recargas recientes       |
-| POST   | `/api/recharges`  | Admin  | Registra una recarga           |
+| Método | Endpoint         | Acceso | Descripción                    |
+|--------|------------------|--------|--------------------------------|
+| GET    | `/api/recharges` | Admin  | Lista recargas recientes       |
+| POST   | `/api/recharges` | Admin  | Registra una recarga           |
 
 **Lógica de `createRecharge` (recharge.service.ts):**
 1. Verifica que el estudiante exista y esté activo.
@@ -353,39 +368,37 @@ Retorna un `NextResponse` con error 401/403 si el usuario no cumple, o `null` si
 
 ### Payments (`/api/payments/`)
 
-| Método | Endpoint          | Acceso | Descripción               |
-|--------|-------------------|--------|---------------------------|
-| GET    | `/api/payments`   | Auth   | Lista pagos recientes     |
-| POST   | `/api/payments`   | Auth   | Registra un pago          |
+| Método | Endpoint         | Acceso | Descripción               |
+|--------|------------------|--------|---------------------------|
+| GET    | `/api/payments`  | Auth   | Lista pagos recientes     |
+| POST   | `/api/payments`  | Auth   | Registra un pago          |
 
-El método de pago se codifica en el campo `note` con el formato `"método|nota_adicional"` (ej. `"Efectivo|Pago semanal de Camila"`).
+El método de pago se codifica en `note` como `"método|nota_adicional"` (ej. `"Efectivo|Pago semanal de Camila"`).
 
 ### Users (`/api/users/`)
 
-| Método | Endpoint            | Acceso | Descripción              |
-|--------|---------------------|--------|--------------------------|
-| GET    | `/api/users`        | Admin  | Lista usuarios/vendedores |
-| POST   | `/api/users`        | Admin  | Crea un vendedor         |
-| DELETE | `/api/users/[id]`   | Admin  | Elimina un vendedor      |
+| Método | Endpoint          | Acceso | Descripción              |
+|--------|-------------------|--------|--------------------------|
+| GET    | `/api/users`      | Admin  | Lista usuarios/vendedores |
+| POST   | `/api/users`      | Admin  | Crea un vendedor         |
+| DELETE | `/api/users/[id]` | Admin  | Elimina un vendedor      |
 
 ### Reports — Comprobante individual (`/api/reports/`)
 
-| Método | Endpoint                            | Acceso | Descripción                                  |
-|--------|-------------------------------------|--------|----------------------------------------------|
-| GET    | `/api/reports?studentId=&from=&to=` | Admin  | Comprobante de un estudiante en un período   |
+| Método | Endpoint                              | Acceso | Descripción                                |
+|--------|---------------------------------------|--------|--------------------------------------------|
+| GET    | `/api/reports?studentId=&from=&to=`   | Admin  | Comprobante de un estudiante en un período |
 
-Retorna: datos del estudiante, ventas detalladas (con ítems), recargas, totales consumido y recargado.
+Retorna: datos del estudiante, ventas detalladas con ítems, recargas, totales consumido y recargado.
 
-El comprobante muestra la **fecha de cada recarga** para todos los tipos de estudiante.
+### Reports — Centro de reportes
 
-### Reports — Centro de reportes (`/api/reports/`)
-
-| Método | Endpoint                                      | Acceso | Descripción                                        |
-|--------|-----------------------------------------------|--------|----------------------------------------------------|
-| GET    | `/api/reports/morosos`                        | Admin  | Estudiantes prepago con saldo negativo             |
-| GET    | `/api/reports/paz-y-salvo`                    | Admin  | Estudiantes prepago con saldo ≥ 0                  |
-| GET    | `/api/reports/pendientes?from=&to=&type=`     | Admin  | Estudiantes con pagos pendientes (weekly/monthly)  |
-| GET    | `/api/reports/sales?from=&to=`                | Admin  | Resumen de ventas en un período                    |
+| Método | Endpoint                                  | Acceso | Descripción                                        |
+|--------|-------------------------------------------|--------|----------------------------------------------------|
+| GET    | `/api/reports/morosos`                    | Admin  | Estudiantes prepago con saldo negativo             |
+| GET    | `/api/reports/paz-y-salvo`                | Admin  | Estudiantes prepago con saldo ≥ 0                  |
+| GET    | `/api/reports/pendientes?from=&to=&type=` | Admin  | Estudiantes con pagos pendientes (weekly/monthly)  |
+| GET    | `/api/reports/sales?from=&to=`            | Admin  | Resumen de ventas en un período (paginado, PAGE_SIZE=100) |
 
 ### Dashboard (`/app/dashboard/`)
 
@@ -404,14 +417,13 @@ Página principal del admin. Muestra mediante `dashboard.service.ts`:
 
 `vitest.config.ts` — ambiente `node`, alias `@` → `./src`, cobertura con v8.
 
-Comandos:
 ```bash
 npm test               # ejecución única
 npm run test:watch     # modo watch
 npm run test:coverage  # con reporte de cobertura
 ```
 
-### Suite de tests — 37 tests en total
+### Suite de tests — 47 tests en total
 
 #### `src/lib/__tests__/currency.test.ts`
 Tests del formateador de moneda COP.
@@ -420,11 +432,9 @@ Tests del formateador de moneda COP.
 Tests del servicio de productos.
 
 #### `src/modules/students/services/__tests__/student.service.test.ts`
-Tests del servicio de estudiantes.
+Tests del servicio de estudiantes. Cubre CP-16 y CP-19.
 
 #### `src/modules/sales/services/__tests__/sale.service.test.ts` — 10 tests
-
-Cubre los casos: CP-05, CP-06, CP-07, CP-17, CP-18, CP-20.
 
 **Patrón de mock** — `$transaction` usa la forma callback:
 ```typescript
@@ -452,14 +462,12 @@ vi.mocked(prisma.$transaction).mockImplementation(async (fn: (tx: any) => any) =
 
 #### `src/modules/recharges/services/__tests__/recharge.service.test.ts` — 5 tests
 
-Cubre el caso CP-09.
-
 **Patrón de mock** — `$transaction` usa la forma array (diferente a ventas):
 ```typescript
 vi.mocked(prisma.$transaction).mockImplementation((ops: any) => Promise.all(ops));
 ```
 
-Esta diferencia es crítica: `createRecharge` pasa un array de promesas a `$transaction`, mientras que `createSale` pasa una función callback.
+Esta diferencia es crítica: `createRecharge` pasa un array de promesas, `createSale` pasa una función callback.
 
 | Test | Descripción |
 |------|-------------|
@@ -475,14 +483,13 @@ Esta diferencia es crítica: `createRecharge` pasa un array de promesas a `$tran
 
 Requiere k6 instalado: `winget install k6`
 
-Ejecutar cualquier prueba:
 ```bash
 k6 run tests/performance/<archivo>.js
 ```
 
 ### Prueba de concurrencia — `concurrency-sale.js`
 
-**Objetivo:** Verificar que las transacciones Prisma son seguras bajo concurrencia (varios vendedores atendiendo al mismo estudiante simultáneamente).
+**Objetivo:** Verificar que las transacciones Prisma son seguras bajo concurrencia.
 
 | Parámetro | Valor |
 |-----------|-------|
@@ -490,27 +497,23 @@ k6 run tests/performance/<archivo>.js
 | Duración  | 15s   |
 | Umbral    | p(95) < 1000ms |
 
-**Escenario:** 5 usuarios virtuales lanzan ventas al mismo estudiante prepago de forma simultánea. El saldo puede quedar muy negativo — esto es esperado por el sistema de deuda.
-
-**Resultado observado:** Sin errores 500. El saldo refleja la acumulación de deuda correctamente. La cafetería opera con un máximo de ~4 vendedores simultáneos en la práctica, por lo que este escenario cubre el caso de uso real.
+**Resultado:** Sin errores 500. Saldo refleja deuda acumulada correctamente. La cafetería opera con máximo ~4 vendedores simultáneos, por lo que cubre el caso real.
 
 ### Prueba de velocidad de reportes — `reports-speed.js`
 
-**Objetivo:** Medir el tiempo de respuesta de los 4 endpoints de reporte.
+**Objetivo:** Medir tiempo de respuesta de los 4 endpoints de reporte.
 
-| Parámetro  | Valor   |
-|------------|---------|
-| VUs        | 1       |
-| Iteraciones | 10     |
-| Umbral     | p(95) < 500ms por endpoint |
+| Parámetro   | Valor |
+|-------------|-------|
+| VUs         | 1     |
+| Iteraciones | 10    |
+| Umbral      | p(95) < 500ms por endpoint |
 
-**Endpoints probados:** `/api/reports/morosos`, `/api/reports/pendientes`, `/api/reports/paz-y-salvo`, `/api/reports/sales`
-
-> Nota: `pendientes` y `sales` requieren parámetros `from`, `to` y `type`. Sin ellos retornan 400. Los endpoints responden en ~96-226ms bajo condiciones normales.
+**Resultado:** Respuestas en ~96–226ms bajo condiciones normales.
 
 ### Prueba de carga — `load-sales.js`
 
-**Objetivo:** Simular 7 vendedores registrando ventas simultáneamente durante 30 segundos.
+**Objetivo:** Simular 7 vendedores registrando ventas simultáneamente.
 
 | Parámetro | Valor |
 |-----------|-------|
@@ -518,37 +521,33 @@ k6 run tests/performance/<archivo>.js
 | Duración  | 30s   |
 | Umbrales  | p(95) < 2000ms, checks > 95% |
 
-**Estrategia:** Usa `setup()` para obtener los IDs de estudiantes activos desde la API antes de iniciar. Cada VU elige un estudiante diferente del pool para simular la distribución real de la cafetería.
+Usa `setup()` para obtener IDs de estudiantes activos antes de iniciar. Cada VU elige un estudiante diferente del pool.
 
 ### Prueba de estrés — `stress-sales.js`
 
-**Objetivo:** Encontrar el punto donde el sistema empieza a degradarse.
+**Objetivo:** Encontrar el punto de degradación.
 
-| Etapa | VUs | Duración |
-|-------|-----|----------|
-| 1     | 5   | 30s      |
-| 2     | 10  | 30s      |
-| 3     | 20  | 30s      |
-| 4     | 30  | 30s      |
-| Bajada | 0  | 15s      |
+| Etapa  | VUs | Duración |
+|--------|-----|----------|
+| 1      | 5   | 30s      |
+| 2      | 10  | 30s      |
+| 3      | 20  | 30s      |
+| 4      | 30  | 30s      |
+| Bajada | 0   | 15s      |
 
 **Umbrales:** p(95) < 3000ms, tasa de errores < 5%.
 
-**Resultado observado:** El sistema soportó hasta 30 VUs sin errores internos (HTTP 500). Todos los checks pasaron.
+**Resultado:** El sistema soportó 30 VUs sin errores HTTP 500. Todos los checks pasaron.
 
 ---
 
 ## 9. Casos de prueba
 
-Casos de prueba documentados en `casos_prueba_snackiverse.xlsx`.
+Documentados también en `casos_prueba_snackiverse.xlsx`.
 
-### Leyenda
+**Leyenda:** ✅ Automatizado (Vitest) · 🔧 Manual · ➖ N/A
 
-- ✅ Automatizado (Vitest)
-- 🔧 Manual
-- ➖ N/A
-
-### Módulo: Ventas
+### Ventas
 
 | ID    | Descripción                                              | Estado |
 |-------|----------------------------------------------------------|--------|
@@ -561,14 +560,14 @@ Casos de prueba documentados en `casos_prueba_snackiverse.xlsx`.
 | CP-07 | Venta con saldo negativo acumula deuda                   | ✅     |
 | CP-08 | Confirmación de venta con saldo en rojo                  | 🔧 ✓  |
 
-### Módulo: Recargas
+### Recargas
 
 | ID    | Descripción                                              | Estado |
 |-------|----------------------------------------------------------|--------|
 | CP-09 | Pago parcial de deuda actualiza saldo correctamente      | ✅     |
 | CP-10 | Recarga a estudiante sin deuda                           | ➖     |
 
-### Módulo: Reportes
+### Reportes
 
 | ID    | Descripción                                              | Estado |
 |-------|----------------------------------------------------------|--------|
@@ -578,7 +577,7 @@ Casos de prueba documentados en `casos_prueba_snackiverse.xlsx`.
 | CP-14 | Comprobante muestra recargas con fecha                   | 🔧     |
 | CP-15 | Reporte de pendientes filtra por tipo de estudiante      | 🔧     |
 
-### Módulo: Estudiantes
+### Estudiantes
 
 | ID    | Descripción                                              | Estado |
 |-------|----------------------------------------------------------|--------|
@@ -588,7 +587,7 @@ Casos de prueba documentados en `casos_prueba_snackiverse.xlsx`.
 | CP-19 | Actualizar tipo de estudiante                            | 🔧     |
 | CP-20 | Estudiante inactivo prepago: inactividad tiene precedencia | ✅   |
 
-### Módulo: Productos
+### Productos
 
 | ID    | Descripción                                              | Estado |
 |-------|----------------------------------------------------------|--------|
@@ -596,7 +595,7 @@ Casos de prueba documentados en `casos_prueba_snackiverse.xlsx`.
 | CP-22 | Desactivar producto no lo elimina de ventas históricas   | 🔧     |
 | CP-23 | Producto con etiqueta de restricción no aparece para estudiante restringido | 🔧 |
 
-### Módulo: Autenticación
+### Autenticación
 
 | ID    | Descripción                                              | Estado |
 |-------|----------------------------------------------------------|--------|
@@ -605,21 +604,21 @@ Casos de prueba documentados en `casos_prueba_snackiverse.xlsx`.
 | CP-26 | Ruta de admin inaccesible para vendor                    | 🔧     |
 | CP-27 | Logout borra la sesión                                   | 🔧     |
 
-### Módulo: Pagos
+### Pagos
 
 | ID    | Descripción                                              | Estado |
 |-------|----------------------------------------------------------|--------|
 | CP-28 | Registrar pago con método de pago                        | 🔧     |
 | CP-29 | Pago aparece en historial del estudiante                 | 🔧     |
 
-### Módulo: Dashboard
+### Dashboard
 
 | ID    | Descripción                                              | Estado |
 |-------|----------------------------------------------------------|--------|
 | CP-30 | Dashboard muestra total de ventas del día correctamente  | 🔧     |
 | CP-31 | Morosos en dashboard coinciden con reporte de morosos    | 🔧     |
 
-### Módulo: Rendimiento
+### Rendimiento
 
 | ID    | Descripción                                              | Estado |
 |-------|----------------------------------------------------------|--------|
@@ -632,14 +631,16 @@ Casos de prueba documentados en `casos_prueba_snackiverse.xlsx`.
 
 ```bash
 # Desarrollo
-npm run dev              # Inicia el servidor de desarrollo (localhost:3000)
+npm run dev              # Servidor de desarrollo (localhost:3000)
 npm run build            # Build de producción
-npm run start            # Inicia el servidor en modo producción
+npm run start            # Servidor en modo producción
 npm run lint             # Linting con ESLint
 
 # Base de datos
 npm run db:seed          # Seed inicial (crea admin por defecto)
-npx tsx prisma/seed-students-test.ts  # Crea 100 estudiantes de prueba
+npm run db:reset         # Resetea la BD
+npm run db:admin-password # Cambia la contraseña del admin
+npx tsx prisma/seed-students-test.ts  # 100 estudiantes de prueba
 
 # Tests unitarios
 npm test                 # Vitest una sola vez
@@ -647,10 +648,10 @@ npm run test:watch       # Vitest en modo watch
 npm run test:coverage    # Vitest con reporte de cobertura
 
 # Tests de rendimiento (requiere k6)
-k6 run tests/performance/concurrency-sale.js   # Concurrencia
-k6 run tests/performance/load-sales.js         # Carga
-k6 run tests/performance/stress-sales.js       # Estrés
-k6 run tests/performance/reports-speed.js      # Velocidad de reportes
+k6 run tests/performance/concurrency-sale.js
+k6 run tests/performance/load-sales.js
+k6 run tests/performance/stress-sales.js
+k6 run tests/performance/reports-speed.js
 
 # Prisma
 npx prisma migrate dev   # Aplica migraciones en desarrollo
@@ -660,4 +661,46 @@ npx prisma generate      # Regenera el cliente de Prisma
 
 ---
 
-*Documentación generada el 2026-06-09.*
+## 11. Despliegue y dominio
+
+### Entorno de producción
+
+| Parámetro           | Valor                          |
+|---------------------|--------------------------------|
+| Plataforma          | Azure App Service              |
+| Plan                | Básico B1                      |
+| Costo               | $13.14 USD/mes (corriendo 24/7)|
+| Suscripción         | Azure for Students ($100 créditos) |
+| Dominio             | `snackiverse.co`               |
+| Registrador dominio | Porkbun                        |
+| SSL                 | Certificado administrado de App Service (gratis, auto-renovable) |
+| Base de datos       | PostgreSQL en Neon (cloud)     |
+
+### DNS (configurado en Porkbun)
+
+| Tipo | Host  | Valor                                                              |
+|------|-------|--------------------------------------------------------------------|
+| A    | @     | `13.89.172.9`                                                      |
+| TXT  | asuid | `1F6AEA4BC58C4F9C169D32A5163690B92A5B89E8288C9DCA197FF8B079DCE30B` |
+
+### Consideraciones de costos
+
+Con el plan B1 corriendo 24/7, los $100 de créditos duran ~7 meses. Para estirarlos:
+- **Apagar el App Service** cuando no se esté desarrollando ni el sitio necesite estar disponible.
+- **No bajar a F1**: el tier gratuito no soporta dominios personalizados con SSL, lo que requeriría desconectar `snackiverse.co`.
+
+### Fecha de lanzamiento objetivo
+
+**4 de julio de 2026.**
+
+### Deuda técnica conocida
+
+- Rate limiting en memoria (`Map`) — no escala a múltiples instancias (aceptable para la escala actual de ~300 estudiantes / ~4 vendedores).
+- JWT no invalidable en servidor — aceptable para cafetería escolar.
+- Sin paginación en listado de estudiantes (300 registros, innecesario por ahora).
+- Tests manuales CP-11 a CP-15, CP-21+ sin automatizar.
+- El sidebar muestra todos los ítems de navegación sin filtrar por rol (vendors ven links de admin aunque el middleware bloquea el acceso). Pendiente ocultar los links para vendors en `AdminShell`.
+
+---
+
+*Documentación actualizada el 2026-06-15.*

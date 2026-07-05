@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Snackiverse — Diagrama ER</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1117; font-family: 'Segoe UI', sans-serif; overflow: hidden; user-select: none; }
+
+#canvas { position: relative; width: 100vw; height: 100vh; }
+svg#lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+
+.table-card {
+  position: absolute;
+  background: #1e2130;
+  border: 1.5px solid #2d3250;
+  border-radius: 10px;
+  min-width: 190px;
+  cursor: grab;
+  z-index: 10;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.table-card:active { cursor: grabbing; }
+.table-card.highlighted { border-color: #6c8cff; box-shadow: 0 0 0 2px #6c8cff44, 0 6px 24px rgba(0,0,0,0.6); }
+
+.table-header {
+  padding: 9px 12px;
+  border-radius: 8px 8px 0 0;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.table-body { padding: 5px 0 7px; }
+.field-row {
+  padding: 3px 12px;
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #a0a8c0;
+  border-left: 2px solid transparent;
+}
+.field-row.pk { color: #ffd97d; border-left-color: #ffd97d; }
+.field-row.fk { color: #7ec8e3; border-left-color: #7ec8e3; }
+.field-name { font-weight: 500; white-space: nowrap; }
+.field-type { color: #5a6280; font-size: 10px; font-style: italic; white-space: nowrap; }
+.divider { height: 1px; background: #2d3250; margin: 4px 0; }
+
+.color-user    .table-header { background: #2d1f5e; color: #b39ddb; }
+.color-student .table-header { background: #1a3a2e; color: #80cbc4; }
+.color-product .table-header { background: #3a2010; color: #ffb74d; }
+.color-txn     .table-header { background: #1a2a3a; color: #64b5f6; }
+.color-pivot   .table-header { background: #2a2a2a; color: #90a4ae; }
+
+.legend {
+  position: fixed; bottom: 16px; left: 16px;
+  background: #1e2130; border: 1px solid #2d3250;
+  border-radius: 8px; padding: 10px 14px; z-index: 100;
+  font-size: 11px; color: #a0a8c0;
+}
+.legend h4 { font-size: 10px; color: #5a6280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.legend-row { display: flex; align-items: center; gap: 7px; margin: 3px 0; }
+.legend-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.sep { height: 1px; background: #2d3250; margin: 6px 0; }
+
+.hint {
+  position: fixed; top: 14px; right: 14px;
+  background: #1e2130; border: 1px solid #2d3250;
+  border-radius: 8px; padding: 8px 13px; z-index: 100;
+  font-size: 11px; color: #5a6280; line-height: 1.6;
+}
+
+.zoom-controls {
+  position: fixed; bottom: 16px; right: 16px;
+  display: flex; gap: 6px; z-index: 100;
+}
+.zoom-btn {
+  background: #1e2130; border: 1px solid #2d3250;
+  border-radius: 6px; color: #a0a8c0; width: 34px; height: 34px;
+  font-size: 17px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+}
+.zoom-btn:hover { background: #2d3250; color: #fff; }
+
+#viewport {
+  position: absolute; top: 0; left: 0;
+  transform-origin: 0 0;
+  width: 2800px; height: 2000px;
+}
+
+.title-label {
+  position: fixed; top: 14px; left: 16px;
+  font-size: 15px; font-weight: 700; color: #a0a8c0;
+  z-index: 100; letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+
+<div class="title-label">🗄️ Snackiverse — Diagrama ER</div>
+
+<div id="canvas">
+  <div id="viewport">
+    <svg id="lines"></svg>
+  </div>
+</div>
+
+<div class="legend">
+  <h4>Campos</h4>
+  <div class="legend-row"><span class="legend-dot" style="background:#ffd97d"></span> PK — Primary Key</div>
+  <div class="legend-row"><span class="legend-dot" style="background:#7ec8e3"></span> FK — Foreign Key</div>
+  <div class="sep"></div>
+  <h4>Relaciones</h4>
+  <div class="legend-row">
+    <svg width="24" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="#6c8cff" stroke-width="2" marker-end="url(#a)"/><defs><marker id="a" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#6c8cff"/></marker></defs></svg>
+    1 : N
+  </div>
+  <div class="legend-row">
+    <svg width="24" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="#ff7eb3" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#b)"/><defs><marker id="b" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L6,3 L0,6z" fill="#ff7eb3"/></marker></defs></svg>
+    N : M (pivot)
+  </div>
+  <div class="sep"></div>
+  <h4>Entidades</h4>
+  <div class="legend-row"><span class="legend-dot" style="background:#b39ddb"></span> Usuarios</div>
+  <div class="legend-row"><span class="legend-dot" style="background:#80cbc4"></span> Estudiantes</div>
+  <div class="legend-row"><span class="legend-dot" style="background:#ffb74d"></span> Productos / Catálogo</div>
+  <div class="legend-row"><span class="legend-dot" style="background:#64b5f6"></span> Transacciones</div>
+  <div class="legend-row"><span class="legend-dot" style="background:#90a4ae"></span> Tablas pivote</div>
+</div>
+
+<div class="hint">
+  🖱️ Arrastra las tablas &nbsp;·&nbsp; Scroll = zoom &nbsp;·&nbsp; Click = resaltar relaciones<br>
+  Arrastra el fondo para navegar &nbsp;·&nbsp; Click en el fondo = resetear
+</div>
+
+<div class="zoom-controls">
+  <button class="zoom-btn" onclick="zoomIn()">+</button>
+  <button class="zoom-btn" onclick="zoomReset()" title="Reset">⊙</button>
+  <button class="zoom-btn" onclick="zoomOut()">−</button>
+</div>
+
+<script>
+const tables = [
+  {
+    id: 'User', color: 'color-user', icon: '👤', x: 60, y: 60,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'name', type: 'String', kind: '' },
+      { name: 'email', type: 'String unique', kind: '' },
+      { name: 'password', type: 'String (bcrypt)', kind: '' },
+      { name: 'role', type: 'admin | vendor', kind: '' },
+      { name: 'createdAt', type: 'DateTime', kind: '' },
+    ]
+  },
+  {
+    id: 'Sale', color: 'color-txn', icon: '🛒', x: 370, y: 60,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'studentId', type: 'cuid?', kind: 'fk' },
+      { name: 'vendorId', type: 'cuid → User', kind: 'fk' },
+      { name: 'total', type: 'Int (COP)', kind: '' },
+      { name: 'createdAt', type: 'DateTime', kind: '' },
+    ]
+  },
+  {
+    id: 'SaleItem', color: 'color-txn', icon: '📋', x: 370, y: 340,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'saleId', type: 'cuid → Sale', kind: 'fk' },
+      { name: 'productId', type: 'cuid → Product', kind: 'fk' },
+      { name: 'quantity', type: 'Int', kind: '' },
+      { name: 'unitPrice', type: 'Int (COP)', kind: '' },
+      { name: 'subtotal', type: 'Int (COP)', kind: '' },
+    ]
+  },
+  {
+    id: 'Student', color: 'color-student', icon: '🎓', x: 60, y: 360,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'name', type: 'String', kind: '' },
+      { name: 'grade', type: 'String', kind: '' },
+      { name: 'type', type: 'prepaid|weekly|monthly|biweekly', kind: '' },
+      { name: 'balance', type: 'Int (COP)', kind: '' },
+      { name: 'isActive', type: 'Boolean', kind: '' },
+      { name: 'guardianWhatsapp', type: 'String?', kind: '' },
+      { name: 'tiqueteraExpiresAt', type: 'DateTime?', kind: '' },
+      { name: 'createdAt', type: 'DateTime', kind: '' },
+    ]
+  },
+  {
+    id: 'Recharge', color: 'color-txn', icon: '⚡', x: 60, y: 740,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'studentId', type: 'cuid → Student', kind: 'fk' },
+      { name: 'amount', type: 'Int (COP)', kind: '' },
+      { name: 'note', type: 'String?', kind: '' },
+      { name: 'createdAt', type: 'DateTime', kind: '' },
+    ]
+  },
+  {
+    id: 'Payment', color: 'color-txn', icon: '💳', x: 310, y: 740,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'studentId', type: 'cuid → Student', kind: 'fk' },
+      { name: 'amount', type: 'Int (COP)', kind: '' },
+      { name: 'note', type: 'String? (método|detalle)', kind: '' },
+      { name: 'createdAt', type: 'DateTime', kind: '' },
+    ]
+  },
+  {
+    id: 'StudentRestriction', color: 'color-pivot', icon: '🚫', x: 310, y: 560,
+    fields: [
+      { name: 'studentId', type: 'cuid → Student', kind: 'fk' },
+      { name: 'tagId', type: 'cuid → Tag', kind: 'fk' },
+      { name: '@@id([studentId, tagId])', type: 'PK compuesta', kind: 'pk' },
+    ]
+  },
+  {
+    id: 'Product', color: 'color-product', icon: '🍎', x: 680, y: 60,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'name', type: 'String', kind: '' },
+      { name: 'icon', type: 'String?', kind: '' },
+      { name: 'price', type: 'Int (COP)', kind: '' },
+      { name: 'categoryId', type: 'cuid?', kind: 'fk' },
+      { name: 'isActive', type: 'Boolean', kind: '' },
+      { name: 'createdAt', type: 'DateTime', kind: '' },
+      { name: 'updatedAt', type: 'DateTime', kind: '' },
+    ]
+  },
+  {
+    id: 'Category', color: 'color-product', icon: '🗂️', x: 990, y: 60,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'name', type: 'String', kind: '' },
+      { name: 'slug', type: 'String unique', kind: '' },
+      { name: 'icon', type: 'String?', kind: '' },
+      { name: 'createdAt', type: 'DateTime', kind: '' },
+    ]
+  },
+  {
+    id: 'ComboItem', color: 'color-product', icon: '📦', x: 680, y: 370,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'comboId', type: 'cuid → Product (combo)', kind: 'fk' },
+      { name: 'itemId', type: 'cuid → Product (item)', kind: 'fk' },
+    ]
+  },
+  {
+    id: 'Tag', color: 'color-pivot', icon: '🏷️', x: 990, y: 370,
+    fields: [
+      { name: 'id', type: 'cuid', kind: 'pk' },
+      { name: 'name', type: 'String unique', kind: '' },
+    ]
+  },
+  {
+    id: 'ProductTag', color: 'color-pivot', icon: '🔗', x: 840, y: 370,
+    fields: [
+      { name: 'productId', type: 'cuid → Product', kind: 'fk' },
+      { name: 'tagId', type: 'cuid → Tag', kind: 'fk' },
+      { name: '@@id([productId, tagId])', type: 'PK compuesta', kind: 'pk' },
+    ]
+  },
+];
+
+const relations = [
+  { from: 'User',    to: 'Sale',               label: '1:N (vendorId)',    type: 'normal' },
+  { from: 'Student', to: 'Sale',               label: '1:N (studentId?)',  type: 'normal' },
+  { from: 'Sale',    to: 'SaleItem',           label: '1:N (saleId)',      type: 'normal' },
+  { from: 'Product', to: 'SaleItem',           label: '1:N (productId)',   type: 'normal' },
+  { from: 'Product', to: 'Category',           label: 'N:1 (categoryId?)', type: 'normal' },
+  { from: 'Product', to: 'ComboItem',          label: 'comboId / itemId',  type: 'normal' },
+  { from: 'Student', to: 'Recharge',           label: '1:N (studentId)',   type: 'normal' },
+  { from: 'Student', to: 'Payment',            label: '1:N (studentId)',   type: 'normal' },
+  { from: 'Student', to: 'StudentRestriction', label: 'studentId',         type: 'pivot'  },
+  { from: 'Tag',     to: 'StudentRestriction', label: 'tagId',             type: 'pivot'  },
+  { from: 'Product', to: 'ProductTag',         label: 'productId',         type: 'pivot'  },
+  { from: 'Tag',     to: 'ProductTag',         label: 'tagId',             type: 'pivot'  },
+];
+
+const viewport = document.getElementById('viewport');
+const svgEl    = document.getElementById('lines');
+const canvas   = document.getElementById('canvas');
+let scale = 0.75, panX = 0, panY = 0;
+let panningCanvas = false, panStart = { x: 0, y: 0 };
+
+const cardEls = {};
+
+tables.forEach(t => {
+  const card = document.createElement('div');
+  card.className = `table-card ${t.color}`;
+  card.id = `card-${t.id}`;
+  card.style.left = t.x + 'px';
+  card.style.top  = t.y + 'px';
+
+  let html = `<div class="table-header"><span>${t.icon}</span>${t.id}</div><div class="table-body">`;
+  t.fields.forEach((f, i) => {
+    if (i > 0 && f.kind === 'fk' && t.fields[i-1].kind === 'pk') html += '<div class="divider"></div>';
+    if (i > 0 && f.kind === ''  && t.fields[i-1].kind === 'fk')  html += '<div class="divider"></div>';
+    html += `<div class="field-row ${f.kind}">
+      <span class="field-name">${f.name}</span>
+      <span class="field-type">${f.type}</span>
+    </div>`;
+  });
+  html += '</div>';
+  card.innerHTML = html;
+
+  let drag = false, sx, sy, ox, oy;
+  card.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    drag = true; sx = e.clientX; sy = e.clientY;
+    ox = parseInt(card.style.left); oy = parseInt(card.style.top);
+    card.style.zIndex = 50;
+    highlightRelated(t.id);
+  });
+  document.addEventListener('mousemove', e => {
+    if (!drag) return;
+    card.style.left = (ox + (e.clientX - sx) / scale) + 'px';
+    card.style.top  = (oy + (e.clientY - sy) / scale) + 'px';
+    drawLines();
+  });
+  document.addEventListener('mouseup', () => { drag = false; card.style.zIndex = 10; });
+
+  viewport.appendChild(card);
+  cardEls[t.id] = card;
+});
+
+function highlightRelated(id) {
+  Object.values(cardEls).forEach(c => c.classList.remove('highlighted'));
+  if (!id) { drawLines(); return; }
+  cardEls[id].classList.add('highlighted');
+  relations.forEach(r => {
+    if (r.from === id) cardEls[r.to]?.classList.add('highlighted');
+    if (r.to   === id) cardEls[r.from]?.classList.add('highlighted');
+  });
+  drawLines();
+}
+
+function drawLines() {
+  svgEl.innerHTML = '';
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  ['normal','pivot'].forEach(type => {
+    const col = type === 'pivot' ? '#ff7eb3' : '#6c8cff';
+    const m = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    m.setAttribute('id', `arr-${type}`);
+    m.setAttribute('viewBox','0 0 8 8'); m.setAttribute('refX','7'); m.setAttribute('refY','4');
+    m.setAttribute('markerWidth','5'); m.setAttribute('markerHeight','5'); m.setAttribute('orient','auto');
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d','M0,0 L8,4 L0,8z'); p.setAttribute('fill', col);
+    m.appendChild(p); defs.appendChild(m);
+  });
+  svgEl.appendChild(defs);
+
+  relations.forEach(r => {
+    const fe = cardEls[r.from], te = cardEls[r.to];
+    if (!fe || !te) return;
+    const fx = parseInt(fe.style.left), fy = parseInt(fe.style.top), fw = fe.offsetWidth, fh = fe.offsetHeight;
+    const tx = parseInt(te.style.left), ty = parseInt(te.style.top), tw = te.offsetWidth, th = te.offsetHeight;
+    const fcx = fx + fw/2, fcy = fy + fh/2, tcx = tx + tw/2, tcy = ty + th/2;
+
+    // Choose exit/entry points on card edges
+    let x1, y1, x2, y2;
+    const adx = Math.abs(tcx - fcx), ady = Math.abs(tcy - fcy);
+    if (adx > ady) {
+      x1 = tcx > fcx ? fx+fw : fx; y1 = fcy;
+      x2 = tcx > fcx ? tx   : tx+tw; y2 = tcy;
+    } else {
+      x1 = fcx; y1 = tcy > fcy ? fy+fh : fy;
+      x2 = tcx; y2 = tcy > fcy ? ty    : ty+th;
+    }
+
+    const hl = fe.classList.contains('highlighted') && te.classList.contains('highlighted');
+    const col = r.type === 'pivot' ? '#ff7eb3' : '#6c8cff';
+    const op  = hl ? 1 : 0.2;
+    const sw  = hl ? 2 : 1.5;
+
+    const cx1 = x1 + (x2-x1)*0.45, cy1 = y1;
+    const cx2 = x2 - (x2-x1)*0.45, cy2 = y2;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M${x1},${y1} C${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`);
+    path.setAttribute('stroke', col);
+    path.setAttribute('stroke-width', sw);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('opacity', op);
+    if (r.type === 'pivot') path.setAttribute('stroke-dasharray','5,4');
+    path.setAttribute('marker-end', `url(#arr-${r.type})`);
+    svgEl.appendChild(path);
+
+    if (hl) {
+      const mx = (x1+x2)/2, my = (y1+y2)/2 - 10;
+      const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      bg.setAttribute('x', mx - r.label.length*3 - 4);
+      bg.setAttribute('y', my - 11);
+      bg.setAttribute('width', r.label.length*6 + 8);
+      bg.setAttribute('height', 15);
+      bg.setAttribute('rx', 3);
+      bg.setAttribute('fill', '#0f1117');
+      bg.setAttribute('opacity', '0.85');
+      svgEl.appendChild(bg);
+
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x', mx); txt.setAttribute('y', my);
+      txt.setAttribute('text-anchor','middle');
+      txt.setAttribute('font-size','10'); txt.setAttribute('fill', col);
+      txt.setAttribute('font-family','Segoe UI,sans-serif');
+      txt.textContent = r.label;
+      svgEl.appendChild(txt);
+    }
+  });
+}
+
+// Pan canvas
+canvas.addEventListener('mousedown', e => {
+  if (e.target === canvas || e.target === svgEl || e.target === viewport) {
+    panningCanvas = true;
+    panStart = { x: e.clientX - panX, y: e.clientY - panY };
+    highlightRelated(null);
+  }
+});
+document.addEventListener('mousemove', e => {
+  if (panningCanvas) { panX = e.clientX - panStart.x; panY = e.clientY - panStart.y; applyTransform(); }
+});
+document.addEventListener('mouseup', () => { panningCanvas = false; });
+
+// Scroll zoom
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  scale = Math.max(0.25, Math.min(2.5, scale * (e.deltaY > 0 ? 0.9 : 1.1)));
+  applyTransform();
+}, { passive: false });
+
+function applyTransform() {
+  viewport.style.transform = `translate(${panX}px,${panY}px) scale(${scale})`;
+}
+function zoomIn()    { scale = Math.min(scale * 1.2, 2.5); applyTransform(); }
+function zoomOut()   { scale = Math.max(scale * 0.83, 0.25); applyTransform(); }
+function zoomReset() { scale = 0.75; panX = 0; panY = 0; applyTransform(); }
+
+applyTransform();
+setTimeout(drawLines, 120);
+</script>
+</body>
+</html>

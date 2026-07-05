@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Snackiverse — Pipeline CI/CD</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d1117;
+  font-family: 'Segoe UI', sans-serif;
+  color: #c9d1d9;
+  min-height: 100vh;
+  padding: 28px 24px 60px;
+}
+
+/* ── HEADER ── */
+.header {
+  max-width: 1100px;
+  margin: 0 auto 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header-left h1 { font-size: 18px; font-weight: 700; color: #e6edf3; display: flex; align-items: center; gap: 8px; }
+.header-left p  { font-size: 12px; color: #484f58; margin-top: 4px; }
+
+.btn-simulate {
+  background: #238636;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn-simulate:hover  { background: #2ea043; }
+.btn-simulate:active { transform: scale(0.97); }
+.btn-simulate:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+
+/* ── TRIGGERS ── */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #484f58;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.trigger-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.trigger-card {
+  background: #161b22;
+  border: 1.5px solid #21262d;
+  border-radius: 10px;
+  padding: 11px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  min-width: 155px;
+}
+.trigger-card:hover { border-color: #58a6ff; transform: translateY(-2px); }
+.trigger-card.active-trigger {
+  border-color: #58a6ff;
+  box-shadow: 0 0 0 2px #1f4068;
+  background: #1c2d3d;
+}
+.trigger-card .t-icon { font-size: 20px; margin-bottom: 5px; }
+.trigger-card .t-name { font-size: 12px; font-weight: 700; color: #e6edf3; }
+.trigger-card .t-sub  { font-size: 10px; color: #484f58; margin-top: 3px; }
+.trigger-card .t-badges { margin-top: 6px; display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
+
+.branch-tag {
+  font-size: 10px;
+  background: #1c2d3d;
+  color: #79c0ff;
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-family: monospace;
+}
+
+.arrow-down {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+/* ── PIPELINE GRID ── */
+.pipelines {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: start;
+}
+@media (max-width: 700px) { .pipelines { grid-template-columns: 1fr; } }
+
+/* ── PIPELINE CARD ── */
+.pipeline-card {
+  background: #161b22;
+  border: 1.5px solid #21262d;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+.pipeline-card.running { border-color: #58a6ff; }
+.pipeline-card.success { border-color: #3fb950; }
+.pipeline-card.failed  { border-color: #f85149; }
+
+.pipeline-header {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #21262d;
+}
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+.badge-ci { background: #1f4068; color: #58a6ff; }
+.badge-cd { background: #1f5c1f; color: #3fb950; }
+
+.pipeline-title { font-size: 14px; font-weight: 700; flex: 1; }
+.pipeline-meta  { font-size: 10px; color: #484f58; }
+
+.pipeline-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: none;
+}
+.status-running { display: inline-block; background: #1c2d3d; color: #58a6ff; }
+.status-success { display: inline-block; background: #1f5c1f; color: #3fb950; }
+.status-failed  { display: inline-block; background: #5c1f1f; color: #f85149; }
+
+/* ── STEPS ── */
+.steps { padding: 10px 14px 14px; }
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  position: relative;
+}
+.step:hover { background: #1c2128; }
+.step.active { background: #1c2128; border-color: #30363d; }
+.step.step-running { background: #1c2d3d; border-color: #1f4068; animation: pulse-border 1.2s infinite; }
+.step.step-success { background: #1c2a1c; border-color: #1f5c1f; }
+.step.step-failed  { background: #2a1c1c; border-color: #5c1f1f; }
+
+@keyframes pulse-border {
+  0%, 100% { border-color: #1f4068; }
+  50%       { border-color: #58a6ff; }
+}
+
+.step + .step { margin-top: 4px; }
+
+.step-connector {
+  width: 1px;
+  height: 8px;
+  background: #21262d;
+  margin: 0 0 0 22px;
+}
+
+.step-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.icon-ci { background: #1f4068; }
+.icon-cd { background: #1a4a1a; }
+.step-running .step-icon { animation: spin-slow 2s linear infinite; }
+
+@keyframes spin-slow {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.step-right { flex: 1; min-width: 0; }
+.step-name  { font-size: 13px; font-weight: 600; color: #e6edf3; margin-bottom: 1px; display: flex; align-items: center; gap: 8px; }
+.step-brief { font-size: 11px; color: #484f58; }
+
+.step-detail {
+  display: none;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #8b949e;
+  line-height: 1.6;
+  border-top: 1px solid #21262d;
+  padding-top: 8px;
+}
+.step.active .step-detail { display: block; }
+
+.step-code {
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 4px;
+  padding: 5px 9px;
+  margin-top: 6px;
+  color: #79c0ff;
+  display: block;
+  white-space: pre;
+}
+
+.secret-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  background: #2d1f5e;
+  color: #b39ddb;
+  border-radius: 4px;
+  padding: 2px 7px;
+  margin: 3px 3px 0 0;
+  font-family: monospace;
+}
+
+.step-timer {
+  font-size: 10px;
+  color: #484f58;
+  font-family: monospace;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* ── RESULT ROW ── */
+.result-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.result-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+.pill-ok   { background: #1f5c1f; color: #3fb950; }
+.pill-fail { background: #5c1f1f; color: #f85149; }
+.pill-warn { background: #5c3d1f; color: #e3b341; }
+
+/* ── WARNING NOTE ── */
+.warning-note {
+  max-width: 1100px;
+  margin: 20px auto 0;
+  background: #2d2010;
+  border: 1px solid #5c3d1f;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-size: 12px;
+  color: #e3b341;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.warning-note span { line-height: 1.6; }
+
+/* ── AZURE SECTION ── */
+.azure-section {
+  max-width: 1100px;
+  margin: 28px auto 0;
+}
+.azure-card {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.azure-header {
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #21262d;
+  background: #0d1f3a;
+}
+.azure-title { font-size: 14px; font-weight: 700; color: #e6edf3; }
+.azure-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: #21262d;
+}
+@media (max-width: 700px) { .azure-grid { grid-template-columns: 1fr 1fr; } }
+.azure-item {
+  background: #161b22;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.azure-item:hover { background: #1c2128; }
+.azure-item-icon { font-size: 20px; margin-bottom: 6px; }
+.azure-item-name { font-size: 12px; font-weight: 700; color: #e6edf3; margin-bottom: 3px; }
+.azure-item-desc { font-size: 11px; color: #484f58; line-height: 1.5; }
+.azure-item-extra {
+  display: none;
+  margin-top: 7px;
+  font-size: 11px;
+  color: #8b949e;
+  border-top: 1px solid #21262d;
+  padding-top: 7px;
+  line-height: 1.5;
+}
+.azure-item.active .azure-item-extra { display: block; }
+.azure-item.active { background: #1c2a3a; }
+
+/* ── SECRETS ── */
+.secrets-section {
+  max-width: 1100px;
+  margin: 24px auto 0;
+}
+.secrets-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 700px) { .secrets-grid { grid-template-columns: 1fr; } }
+.secret-row {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 11px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.secret-row:hover { background: #1c2128; border-color: #30363d; }
+.secret-row.active { background: #1c1a2a; border-color: #2d1f5e; }
+.secret-name {
+  font-size: 11px;
+  font-family: monospace;
+  color: #b39ddb;
+  background: #2d1f5e;
+  padding: 3px 9px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.secret-content { flex: 1; }
+.secret-desc { font-size: 11px; color: #484f58; line-height: 1.5; }
+.secret-extra {
+  display: none;
+  margin-top: 7px;
+  font-size: 11px;
+  color: #8b949e;
+  border-top: 1px solid #21262d;
+  padding-top: 7px;
+  line-height: 1.6;
+}
+.secret-row.active .secret-extra { display: block; }
+
+/* ── PROGRESS BAR ── */
+.progress-bar-wrap {
+  height: 3px;
+  background: #21262d;
+  border-radius: 2px;
+  margin: 8px 0 0;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  transition: width 0.5s linear;
+}
+.progress-ci { background: #58a6ff; }
+.progress-cd { background: #3fb950; }
+
+/* ── GLOBAL WRAPPER ── */
+.diagram-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>⚙️ Snackiverse — Pipeline CI/CD</h1>
+    <p>Click en cualquier paso para ver detalles · Simula una ejecución completa</p>
+  </div>
+  <button class="btn-simulate" id="btnSimulate" onclick="simulate()">▶ Simular pipeline</button>
+</div>
+
+<div class="diagram-wrapper">
+
+  <!-- TRIGGERS -->
+  <div class="section-label">¿Qué evento dispara cada workflow?</div>
+  <div class="trigger-row">
+    <div class="trigger-card" onclick="selectTrigger(0)">
+      <div class="t-icon">🔀</div>
+      <div class="t-name">Push a develop</div>
+      <div class="t-sub">Solo activa CI</div>
+      <div class="t-badges"><span class="branch-tag">CI ✓</span><span class="branch-tag" style="color:#484f58;background:#1c2128">CD ✗</span></div>
+    </div>
+    <div class="trigger-card" onclick="selectTrigger(1)">
+      <div class="t-icon">🔁</div>
+      <div class="t-name">Pull Request</div>
+      <div class="t-sub">→ main o develop</div>
+      <div class="t-badges"><span class="branch-tag">CI ✓</span><span class="branch-tag" style="color:#484f58;background:#1c2128">CD ✗</span></div>
+    </div>
+    <div class="trigger-card" onclick="selectTrigger(2)">
+      <div class="t-icon">🚀</div>
+      <div class="t-name">Push a main</div>
+      <div class="t-sub">Activa CI y CD en paralelo</div>
+      <div class="t-badges"><span class="branch-tag">CI ✓</span><span class="branch-tag" style="color:#3fb950;background:#1f5c1f">CD ✓</span></div>
+    </div>
+  </div>
+
+  <div class="arrow-down">
+    <svg width="20" height="28"><path d="M10,0 L10,20 M4,14 L10,22 L16,14" stroke="#484f58" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+  </div>
+
+  <!-- PIPELINES -->
+  <div class="pipelines">
+
+    <!-- CI -->
+    <div>
+      <div class="section-label">ci.yml — integración continua</div>
+      <div class="pipeline-card" id="card-ci">
+        <div class="pipeline-header" style="background:linear-gradient(135deg,#0d2137,#1a3a5c);border-bottom:1px solid #1f4068">
+          <span class="badge badge-ci">CI</span>
+          <span class="pipeline-title">Tests &amp; Build</span>
+          <span class="pipeline-meta">ubuntu-latest · Node 22</span>
+          <span class="pipeline-status" id="status-ci"></span>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar progress-ci" id="prog-ci"></div></div>
+        <div class="steps" id="steps-ci">
+
+          <div class="step" id="ci-0" onclick="toggleStep('ci-0')">
+            <div class="step-icon icon-ci">📥</div>
+            <div class="step-right">
+              <div class="step-name">Checkout <span class="step-timer" id="t-ci-0"></span></div>
+              <div class="step-brief">Clona el repositorio en el runner</div>
+              <div class="step-detail">
+                GitHub Actions clona tu repo en una máquina virtual Ubuntu limpia. Sin este paso no hay código que ejecutar.
+                <div class="step-code">uses: actions/checkout@v4</div>
+              </div>
+            </div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step" id="ci-1" onclick="toggleStep('ci-1')">
+            <div class="step-icon icon-ci">🟢</div>
+            <div class="step-right">
+              <div class="step-name">Setup Node.js 22 <span class="step-timer" id="t-ci-1"></span></div>
+              <div class="step-brief">Instala la versión exacta de Node</div>
+              <div class="step-detail">
+                Fija la versión de Node a 22 para que el entorno de CI sea idéntico al de producción. Evita bugs de compatibilidad.
+                <div class="step-code">uses: actions/setup-node@v4
+with:
+  node-version: 22</div>
+              </div>
+            </div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step" id="ci-2" onclick="toggleStep('ci-2')">
+            <div class="step-icon icon-ci">📦</div>
+            <div class="step-right">
+              <div class="step-name">Install dependencies <span class="step-timer" id="t-ci-2"></span></div>
+              <div class="step-brief">npm install limpio</div>
+              <div class="step-detail">
+                Elimina el lockfile antes de instalar para evitar conflictos entre la versión local y el runner. Instala todas las dependencias desde cero.
+                <div class="step-code">rm -f package-lock.json
+npm install</div>
+              </div>
+            </div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step" id="ci-3" onclick="toggleStep('ci-3')">
+            <div class="step-icon icon-ci">🧪</div>
+            <div class="step-right">
+              <div class="step-name">Run tests <span class="step-timer" id="t-ci-3"></span></div>
+              <div class="step-brief">47 tests con Vitest — si falla, el pipeline para</div>
+              <div class="step-detail">
+                Ejecuta toda la suite de Vitest. Si cualquier test falla, el pipeline sale con código de error y <strong>no continúa al build</strong>. Los PRs quedan bloqueados hasta que pasen.
+                <div class="step-code">npx vitest run</div>
+                <span class="secret-tag">sale.service · recharge.service · student.service · currency</span>
+              </div>
+            </div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step" id="ci-4" onclick="toggleStep('ci-4')">
+            <div class="step-icon icon-ci">🏗️</div>
+            <div class="step-right">
+              <div class="step-name">Build <span class="step-timer" id="t-ci-4"></span></div>
+              <div class="step-brief">Compila Next.js con los secrets de producción</div>
+              <div class="step-detail">
+                Compila la app completa. Necesita las variables reales porque Prisma genera el cliente contra la BD en el momento del build.
+                <div class="step-code">npm run build</div>
+                <span class="secret-tag">🔒 DATABASE_URL</span>
+                <span class="secret-tag">🔒 JWT_SECRET</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="result-row">
+        <span class="result-pill pill-ok">✓ Verde → rama protegida</span>
+        <span class="result-pill pill-fail">✗ Falla → PR bloqueado</span>
+      </div>
+    </div>
+
+    <!-- CD -->
+    <div>
+      <div class="section-label">deploy-azure.yml — despliegue continuo</div>
+      <div class="pipeline-card" id="card-cd">
+        <div class="pipeline-header" style="background:linear-gradient(135deg,#0d2d0d,#1a4a1a);border-bottom:1px solid #1f5c1f">
+          <span class="badge badge-cd">CD</span>
+          <span class="pipeline-title">Build &amp; Deploy → Azure</span>
+          <span class="pipeline-meta">ubuntu-latest · Node 22</span>
+          <span class="pipeline-status" id="status-cd"></span>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar progress-cd" id="prog-cd"></div></div>
+        <div class="steps" id="steps-cd">
+
+          <div class="step" id="cd-0" onclick="toggleStep('cd-0')">
+            <div class="step-icon icon-cd">📥</div>
+            <div class="step-right">
+              <div class="step-name">Checkout <span class="step-timer" id="t-cd-0"></span></div>
+              <div class="step-brief">Clona el repositorio</div>
+              <div class="step-detail">
+                Igual que en CI: clona el repo en un runner Ubuntu limpio, independiente del que corre CI.
+                <div class="step-code">uses: actions/checkout@v4</div>
+              </div>
+            </div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step" id="cd-1" onclick="toggleStep('cd-1')">
+            <div class="step-icon icon-cd">🟢</div>
+            <div class="step-right">
+              <div class="step-name">Setup Node.js 22 <span class="step-timer" id="t-cd-1"></span></div>
+              <div class="step-brief">Misma versión que CI y producción</div>
+              <div class="step-detail">
+                Paridad de entornos: CI, CD y Azure App Service usan Node 22 para evitar diferencias de comportamiento.
+                <div class="step-code">uses: actions/setup-node@v4
+with:
+  node-version: 22</div>
+              </div>
+            </div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step" id="cd-2" onclick="toggleStep('cd-2')">
+            <div class="step-icon icon-cd">📦</div>
+            <div class="step-right">
+              <div class="step-name">Install dependencies <span class="step-timer" id="t-cd-2"></span></div>
+              <div class="step-brief">Instala paquetes para el build de producción</div>
+              <div class="step-detail">
+                Instala todas las dependencias necesarias para compilar. El resultado del build será standalone y no necesitará node_modules en producción.
+                <div class="step-code">rm -f package-lock.json
+npm install</div>
+              </div>
+            </div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step" id="cd-3" onclick="toggleStep('cd-3')">
+            <div class="step-icon icon-cd">🏗️</div>
+            <div class="step-right">
+              <div class="step-name">Build de producción <span class="step-timer" id="t-cd-3"></span></div>
+              <div class="step-brief">Compila Next.js en modo standalone</div>
+              <div class="step-detail">
+                El modo <code style="color:#79c0ff">standalone</code> genera una carpeta autocontenida con todo lo necesario para correr la app sin node_modules. Reduce el tamaño del deploy drásticamente.
+                <div class="step-code">npm run build</div>
+                <span class="secret-tag">🔒 DATABASE_URL</span>
+                <span class="secret-tag">🔒 JWT_SECRET</span>
+              </div>
+            </div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step" id="cd-4" onclick="toggleStep('cd-4')">
+            <div class="step-icon icon-cd">📁</div>
+            <div class="step-right">
+              <div class="step-name">Prepare deployment package <span class="step-timer" id="t-cd-4"></span></div>
+              <div class="step-brief">Arma la carpeta ./deploy lista para subir</div>
+              <div class="step-detail">
+                Copia las tres partes necesarias del build a una sola carpeta <code style="color:#79c0ff">./deploy</code>:
+                <div class="step-code"># App standalone (servidor Node)
+cp -r .next/standalone ./deploy
+
+# Assets estáticos (CSS, JS, imágenes)
+cp -r .next/static ./deploy/.next/static
+
+# Archivos públicos (logo, favicons)
+cp -r public ./deploy/public</div>
+              </div>
+            </div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step" id="cd-5" onclick="toggleStep('cd-5')">
+            <div class="step-icon icon-cd">☁️</div>
+            <div class="step-right">
+              <div class="step-name">Deploy to Azure App Service <span class="step-timer" id="t-cd-5"></span></div>
+              <div class="step-brief">Sube el paquete a Azure y reinicia la app</div>
+              <div class="step-detail">
+                La action oficial de Azure sube <code style="color:#79c0ff">./deploy</code> al App Service usando el Publish Profile. Azure reinicia automáticamente el servidor y la nueva versión queda activa en <strong>snackiverse.co</strong>.
+                <div class="step-code">uses: azure/webapps-deploy@v3
+with:
+  app-name: ${{ secrets.AZURE_APP_NAME }}
+  publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+  package: ./deploy</div>
+                <span class="secret-tag">🔒 AZURE_APP_NAME</span>
+                <span class="secret-tag">🔒 AZURE_PUBLISH_PROFILE</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="result-row">
+        <span class="result-pill pill-ok">✓ snackiverse.co actualizado</span>
+        <span class="result-pill pill-fail">✗ Versión anterior sigue activa</span>
+      </div>
+    </div>
+
+  </div><!-- /pipelines -->
+
+  <!-- WARNING -->
+  <div class="warning-note">
+    ⚠️
+    <span><strong>CI y CD corren en paralelo</strong> cuando hay push a <code style="color:#79c0ff;font-size:11px">main</code>. Eso significa que el deploy puede llegar a Azure <em>antes</em> de que los tests terminen. Si un test falla después, el código roto ya está en producción. Para un proyecto en producción real lo ideal es encadenar CD después de CI.</span>
+  </div>
+
+  <!-- AZURE -->
+  <div class="azure-section">
+    <div class="section-label" style="text-align:left;margin-bottom:10px">¿Qué pasa en Azure después del deploy? — click para expandir</div>
+    <div class="azure-card">
+      <div class="azure-header">
+        <span style="font-size:22px">☁️</span>
+        <span class="azure-title">Azure App Service — snackiverse.co</span>
+        <span style="font-size:11px;color:#484f58;margin-left:auto">Plan B1 · $13.14/mes · Azure for Students</span>
+      </div>
+      <div class="azure-grid">
+        <div class="azure-item" onclick="toggleAzure(this)">
+          <div class="azure-item-icon">📤</div>
+          <div class="azure-item-name">Recibe el paquete</div>
+          <div class="azure-item-desc">Azure recibe la carpeta ./deploy vía Publish Profile.</div>
+          <div class="azure-item-extra">El Publish Profile es un XML con credenciales de deploy descargado desde el portal de Azure. La action de GitHub lo usa para autenticarse y subir los archivos por FTP/WebDeploy.</div>
+        </div>
+        <div class="azure-item" onclick="toggleAzure(this)">
+          <div class="azure-item-icon">▶️</div>
+          <div class="azure-item-name">Inicia la app</div>
+          <div class="azure-item-desc">Ejecuta node server.js del standalone build.</div>
+          <div class="azure-item-extra">Next.js en modo standalone genera un <code style="color:#79c0ff">server.js</code> que levanta la app completa. Azure lo ejecuta automáticamente al terminar el deploy. No necesita npm install ni node_modules en el servidor.</div>
+        </div>
+        <div class="azure-item" onclick="toggleAzure(this)">
+          <div class="azure-item-icon">🌐</div>
+          <div class="azure-item-name">Sirve en snackiverse.co</div>
+          <div class="azure-item-desc">Dominio personalizado con SSL apuntando al App Service.</div>
+          <div class="azure-item-extra">DNS en Porkbun: registro A <code style="color:#79c0ff">@</code> → <code style="color:#79c0ff">13.89.172.9</code>. Certificado SSL administrado por Azure (gratis, auto-renovable). También disponible en www.snackiverse.co.</div>
+        </div>
+        <div class="azure-item" onclick="toggleAzure(this)">
+          <div class="azure-item-icon">🔌</div>
+          <div class="azure-item-name">Conecta a Neon (PostgreSQL)</div>
+          <div class="azure-item-desc">DATABASE_URL apunta a la BD en la nube de Neon.</div>
+          <div class="azure-item-extra">Neon es un servicio de PostgreSQL serverless. La cadena de conexión incluye host, puerto, usuario, contraseña y nombre de la BD. Se configura en Azure Portal → Configuración → Variables de aplicación.</div>
+        </div>
+        <div class="azure-item" onclick="toggleAzure(this)">
+          <div class="azure-item-icon">🔒</div>
+          <div class="azure-item-name">Variables de entorno</div>
+          <div class="azure-item-desc">DATABASE_URL y JWT_SECRET definidas en Azure Portal.</div>
+          <div class="azure-item-extra">En Azure: App Service → Configuración → Variables de aplicación. Estas variables reemplazan al archivo .env en producción. Nunca se suben al repositorio de GitHub.</div>
+        </div>
+        <div class="azure-item" onclick="toggleAzure(this)">
+          <div class="azure-item-icon">📊</div>
+          <div class="azure-item-name">Recursos del plan B1</div>
+          <div class="azure-item-desc">1 vCPU · 1.75 GB RAM · $13.14/mes.</div>
+          <div class="azure-item-extra">Con $100 de créditos Azure for Students, el plan B1 alcanza ~7 meses corriendo 24/7. Apagar el App Service cuando no se usa extiende los créditos. Lanzamiento: 4 de julio de 2026.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECRETS -->
+  <div class="secrets-section">
+    <div class="section-label" style="margin-bottom:10px">🔒 GitHub Secrets — click para ver dónde configurar cada uno</div>
+    <div class="secrets-grid">
+
+      <div class="secret-row" onclick="toggleSecret(this)">
+        <span class="secret-name">DATABASE_URL</span>
+        <div class="secret-content">
+          <div class="secret-desc">Conexión a PostgreSQL en Neon. Usada en build (CI y CD).</div>
+          <div class="secret-extra">
+            <strong>Formato:</strong><br>
+            <code style="color:#79c0ff;font-size:10px">postgresql://user:pass@host/db?sslmode=require</code><br><br>
+            <strong>Dónde configurar:</strong> GitHub → Settings → Secrets and variables → Actions → New repository secret.<br><br>
+            <strong>También en:</strong> Azure Portal → App Service → Configuración → Variables de aplicación.
+          </div>
+        </div>
+      </div>
+
+      <div class="secret-row" onclick="toggleSecret(this)">
+        <span class="secret-name">JWT_SECRET</span>
+        <div class="secret-content">
+          <div class="secret-desc">Firma los tokens JWT de sesión. Debe ser igual en CI y Azure.</div>
+          <div class="secret-extra">
+            <strong>Requisito:</strong> Cadena larga y aleatoria (mínimo 32 caracteres). Si cambia, todos los usuarios quedan deslogueados.<br><br>
+            <strong>Dónde configurar:</strong> GitHub Secrets + Azure Variables de aplicación. Los dos valores deben ser idénticos.
+          </div>
+        </div>
+      </div>
+
+      <div class="secret-row" onclick="toggleSecret(this)">
+        <span class="secret-name">AZURE_APP_NAME</span>
+        <div class="secret-content">
+          <div class="secret-desc">Nombre del App Service en Azure. Identifica dónde desplegar.</div>
+          <div class="secret-extra">
+            <strong>Valor:</strong> <code style="color:#79c0ff;font-size:10px">snackiverse</code> (el nombre que aparece en el portal de Azure).<br><br>
+            <strong>Dónde ver:</strong> Azure Portal → App Services → nombre del recurso en la parte superior izquierda.
+          </div>
+        </div>
+      </div>
+
+      <div class="secret-row" onclick="toggleSecret(this)">
+        <span class="secret-name">AZURE_PUBLISH_PROFILE</span>
+        <div class="secret-content">
+          <div class="secret-desc">XML con credenciales de deploy. Se descarga desde Azure Portal.</div>
+          <div class="secret-extra">
+            <strong>Cómo obtenerlo:</strong> Azure Portal → App Service → botón "Obtener perfil de publicación" (en la barra superior). Descarga un archivo XML.<br><br>
+            <strong>Cómo guardarlo:</strong> Copiar todo el contenido del XML y pegarlo en el valor del secret en GitHub. Incluye credenciales de FTP y WebDeploy.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<script>
+// ── TOGGLE STEPS ──────────────────────────────
+function toggleStep(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('active');
+}
+
+// ── TOGGLE AZURE ITEMS ────────────────────────
+function toggleAzure(el) {
+  el.classList.toggle('active');
+}
+
+// ── TOGGLE SECRETS ────────────────────────────
+function toggleSecret(el) {
+  el.classList.toggle('active');
+}
+
+// ── TRIGGER HIGHLIGHT ─────────────────────────
+function selectTrigger(idx) {
+  document.querySelectorAll('.trigger-card').forEach((c, i) => {
+    c.classList.toggle('active-trigger', i === idx);
+  });
+}
+
+// ── SIMULATION ────────────────────────────────
+const CI_STEPS = ['ci-0','ci-1','ci-2','ci-3','ci-4'];
+const CD_STEPS = ['cd-0','cd-1','cd-2','cd-3','cd-4','cd-5'];
+const CI_TIMES = [2, 8, 25, 18, 40];
+const CD_TIMES = [2, 8, 25, 42, 5, 30];
+
+let simRunning = false;
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function setStepState(id, state) {
+  const el = document.getElementById(id);
+  el.classList.remove('step-running','step-success','step-failed');
+  if (state) el.classList.add(`step-${state}`);
+}
+
+function setCardState(which, state) {
+  const el = document.getElementById(`card-${which}`);
+  el.classList.remove('running','success','failed');
+  if (state) el.classList.add(state);
+}
+
+function setStatus(which, text, cls) {
+  const el = document.getElementById(`status-${which}`);
+  el.className = 'pipeline-status';
+  if (cls) { el.classList.add(cls); el.style.display = 'inline-block'; }
+  else { el.style.display = 'none'; }
+  el.textContent = text;
+}
+
+function setTimer(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val ? val+'s' : '';
+}
+
+function setProgress(which, pct) {
+  document.getElementById(`prog-${which}`).style.width = pct + '%';
+}
+
+async function runPipeline(steps, times, which) {
+  setCardState(which, 'running');
+  setStatus(which, '● Corriendo…', 'status-running');
+  setProgress(which, 0);
+
+  const total = times.reduce((a,b) => a+b, 0);
+  let elapsed = 0;
+
+  for (let i = 0; i < steps.length; i++) {
+    setStepState(steps[i], 'running');
+    const duration = times[i] * 80; // ms per second (accelerated)
+    const start = Date.now();
+
+    await new Promise(resolve => {
+      const tick = setInterval(() => {
+        const t = Math.round((Date.now() - start) / 80);
+        setTimer(`t-${steps[i]}`, t);
+        const prog = ((elapsed + (Date.now()-start)/80) / total) * 100;
+        setProgress(which, Math.min(prog, 98));
+      }, 100);
+      setTimeout(() => { clearInterval(tick); resolve(); }, duration);
+    });
+
+    elapsed += times[i];
+    setTimer(`t-${steps[i]}`, times[i]);
+    setStepState(steps[i], 'success');
+    setProgress(which, (elapsed / total) * 100);
+    await sleep(150);
+  }
+
+  setProgress(which, 100);
+  setCardState(which, 'success');
+  setStatus(which, '✓ Completado', 'status-success');
+}
+
+async function simulate() {
+  if (simRunning) return;
+  simRunning = true;
+  const btn = document.getElementById('btnSimulate');
+  btn.disabled = true;
+  btn.textContent = '⏳ Ejecutando…';
+
+  // Reset all
+  [...CI_STEPS, ...CD_STEPS].forEach(id => {
+    setStepState(id, null);
+    const tid = id.replace('-','').replace(/(\d)$/,''); // approx
+    setTimer(`t-${id}`, '');
+  });
+  CI_STEPS.forEach(id => setTimer(`t-${id}`, ''));
+  CD_STEPS.forEach(id => setTimer(`t-${id}`, ''));
+  setCardState('ci', null);
+  setCardState('cd', null);
+  setStatus('ci', '', null);
+  setStatus('cd', '', null);
+  setProgress('ci', 0);
+  setProgress('cd', 0);
+
+  // Highlight push to main trigger
+  selectTrigger(2);
+  await sleep(600);
+
+  // Run CI and CD in parallel (as GitHub does)
+  await Promise.all([
+    runPipeline(CI_STEPS, CI_TIMES, 'ci'),
+    runPipeline(CD_STEPS, CD_TIMES, 'cd'),
+  ]);
+
+  await sleep(400);
+  btn.disabled = false;
+  btn.innerHTML = '↺ Volver a simular';
+  simRunning = false;
+}
+</script>
+</body>
+</html>
