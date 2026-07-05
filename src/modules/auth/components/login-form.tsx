@@ -75,20 +75,20 @@ export function LoginForm() {
       sx={{
         display: "grid",
         width: "100%",
-        maxWidth: { xs: "420px", lg: "1030px" },
+        maxWidth: { xs: "420px", sm: "1030px" },
         overflow: "hidden",
-        borderRadius: { xs: "20px", lg: "28px" },
+        borderRadius: { xs: "20px", sm: "28px" },
         bgcolor: "white",
         boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
-        gridTemplateColumns: { xs: "1fr", lg: "1.08fr 0.92fr" },
-        minHeight: { xs: "auto", lg: "558px" },
+        gridTemplateColumns: { xs: "1fr", sm: "1.08fr 0.92fr" },
+        minHeight: { xs: "auto", sm: "558px" },
         margin: "auto",
       }}
     >
       {/* Banner superior - solo en móvil */}
       <Box
         sx={{
-          display: { xs: "flex", lg: "none" },
+          display: { xs: "flex", sm: "none" },
           background: "linear-gradient(135deg, #073818 0%, #17632f 50%, #25a957 100%)",
           flexDirection: "column",
           alignItems: "center",
@@ -127,7 +127,7 @@ export function LoginForm() {
           px: { xs: 3, sm: 4 },
           py: 5,
           color: "white",
-          display: { xs: "none", lg: "flex" },
+          display: { xs: "none", sm: "flex" },
           alignItems: "center",
           justifyContent: "center",
         }}
