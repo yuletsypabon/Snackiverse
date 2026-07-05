@@ -55,6 +55,7 @@ jobs:
         with:
           name: next-build
           path: .next/standalone
+          include-hidden-files: true
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
