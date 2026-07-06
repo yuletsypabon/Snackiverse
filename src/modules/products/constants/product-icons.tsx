@@ -180,3 +180,36 @@ export function getSuggestedThenAllIconOptions(
   const rest = getAllProductIconOptions().filter((o) => !seen.has(o.id));
   return [...suggested, ...rest];
 }
+
+// ── Emojis para productos ────────────────────────────────────────────────────
+// Grid curado de emojis de comida/bebida, agrupado por tipo. Se guarda el emoji
+// (carácter) directamente en product.icon. Solo aplica a productos, no categorías.
+export type ProductEmojiGroup = { label: string; emojis: string[] };
+
+export const PRODUCT_EMOJI_GROUPS: ProductEmojiGroup[] = [
+  { label: "Comidas", emojis: ["🍔","🍕","🌭","🥪","🌮","🌯","🥙","🍟","🍗","🍖","🥟","🍜","🍝","🍲","🥘","🫓","🧆","🍱","🍛","🥗"] },
+  { label: "Bebidas", emojis: ["🥤","🧃","🧋","☕","🍵","🥛","🧉","🍶","🫖","💧","🧊","🥂"] },
+  { label: "Dulces", emojis: ["🍪","🍩","🍰","🧁","🎂","🍫","🍬","🍭","🍮","🍯","🥮","🍡","🍦","🍨","🍧"] },
+  { label: "Snacks", emojis: ["🍿","🥨","🥯","🧀","🥓","🥚","🍳","🥠","🌰","🥜"] },
+  { label: "Frutas", emojis: ["🍎","🍌","🍓","🍇","🍊","🍉","🍍","🥭","🍑","🍒","🥝","🍐","🍏","🫐","🥥","🍈"] },
+  { label: "Saludables", emojis: ["🥕","🥦","🥒","🌽","🍅","🥑","🫑","🥬","🍠","🌶️"] },
+];
+
+// Mapeo de los ids de iconos MUI antiguos a un emoji equivalente, para que los
+// productos creados antes del cambio sigan mostrando algo coherente.
+const LEGACY_ICON_EMOJI: Record<string, string> = {
+  restaurant_menu: "🍽️", restaurant: "🍴", set_meal: "🍱", shopping_basket: "🧺",
+  local_drink: "🥤", local_cafe: "☕", emoji_food_beverage: "🍵", water_drop: "💧",
+  sports_bar: "🥤", liquor: "🧃", fastfood: "🍔", lunch_dining: "🍔", kebab_dining: "🌯",
+  ramen_dining: "🍜", dinner_dining: "🍽️", takeout_dining: "🥡", cake: "🍰",
+  icecream: "🍦", cookie: "🍪", bakery_dining: "🥐", card_giftcard: "🎁", no_food: "🚫",
+  breakfast_dining: "🍳", table_restaurant: "🍽️", food_bank: "🥫", emoji_nature: "🍎",
+  yard: "🌿", park: "🌳", grass: "🌿", spa: "🍃",
+};
+
+// Devuelve el emoji a mostrar: si es un id viejo lo traduce; si ya es un emoji lo
+// deja igual; si está vacío devuelve "".
+export function resolveProductEmoji(icon?: string | null): string {
+  if (!icon) return "";
+  return LEGACY_ICON_EMOJI[icon] ?? icon;
+}

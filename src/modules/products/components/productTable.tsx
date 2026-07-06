@@ -22,10 +22,13 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import SearchIcon from "@mui/icons-material/Search";
 import { useState } from "react";
 
 import { formatCurrency } from "@/lib/currency";
-import { getProductIconOption } from "../constants/product-icons";
+import { resolveProductEmoji } from "../constants/product-icons";
 import type {
   ProductCategoryDto,
   ProductDto,
@@ -58,6 +61,11 @@ function sortProducts(products: ProductDto[]) {
 
 export function ProductTable({ initialProducts, categories, tags: initialTags }: ProductTableProps) {
   const [products, setProducts] = useState(() => sortProducts(initialProducts));
+  const [query, setQuery] = useState("");
+
+  const visibleProducts = query.trim()
+    ? products.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase()))
+    : products;
   const [notice, setNotice] = useState<NoticeState>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
@@ -148,25 +156,41 @@ export function ProductTable({ initialProducts, categories, tags: initialTags }:
   return (
     <>
       <Stack spacing={2.5}>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={1.5}
-          sx={{ alignItems: { md: "center" }, justifyContent: "space-between" }}
-        >
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <RestaurantMenuOutlinedIcon sx={{ fontSize: 24, color: "#0a2540" }} />
-            <Typography variant="h5" sx={{ fontWeight: 900, color: "#0a2540" }}>
-              Productos
-            </Typography>
-          </Stack>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <RestaurantMenuOutlinedIcon sx={{ fontSize: 24, color: "#0a2540" }} />
+          <Typography variant="h5" sx={{ fontWeight: 900, color: "#0a2540" }}>
+            Productos
+          </Typography>
+        </Stack>
 
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          sx={{ alignItems: { sm: "center" } }}
+        >
+          <TextField
+            placeholder="Buscar producto por nombre..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            size="small"
+            sx={{ flex: 1 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" sx={{ color: "#94a3b8" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
           <Button
             type="button"
             variant="contained"
             color="secondary"
-            size="large"
             startIcon={<AddIcon />}
             onClick={openCreateDialog}
+            sx={{ whiteSpace: "nowrap" }}
           >
             Nuevo Producto
           </Button>
@@ -187,19 +211,18 @@ export function ProductTable({ initialProducts, categories, tags: initialTags }:
             </TableHead>
 
             <TableBody>
-              {products.length === 0 ? (
+              {visibleProducts.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={8}
                     sx={{ color: "text.secondary", py: 5, textAlign: "center" }}
                   >
-                    No hay productos para mostrar.
+                    {query.trim() ? "No se encontraron productos." : "No hay productos para mostrar."}
                   </TableCell>
                 </TableRow>
               ) : (
-                products.map((product) => {
-                  const iconOption = getProductIconOption(product.icon);
-                  const ProductIcon = iconOption?.Icon ?? RestaurantMenuOutlinedIcon;
+                visibleProducts.map((product) => {
+                  const emoji = resolveProductEmoji(product.icon);
 
                   return (
                     <TableRow
@@ -210,10 +233,10 @@ export function ProductTable({ initialProducts, categories, tags: initialTags }:
                       }}
                     >
                       <TableCell sx={{ width: 80 }}>
-                        {iconOption || !product.icon ? (
-                          <ProductIcon fontSize="small" />
+                        {emoji ? (
+                          <Typography sx={{ fontSize: 22 }}>{emoji}</Typography>
                         ) : (
-                          <Typography sx={{ fontSize: 14 }}>{product.icon}</Typography>
+                          <RestaurantMenuOutlinedIcon fontSize="small" sx={{ color: "#94a3b8" }} />
                         )}
                       </TableCell>
 

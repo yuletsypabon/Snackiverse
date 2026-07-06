@@ -1,6 +1,5 @@
 "use client";
 
-import NoFoodOutlinedIcon from "@mui/icons-material/NoFoodOutlined";
 import {
   Alert,
   Box,
@@ -18,8 +17,8 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 
 import { formatCurrency } from "@/lib/currency";
 import {
-  getProductIconOption,
-  getSuggestedThenAllIconOptions,
+  PRODUCT_EMOJI_GROUPS,
+  resolveProductEmoji,
 } from "../constants/product-icons";
 import type {
   ProductCategoryDto,
@@ -85,7 +84,6 @@ export default function ProductForm({
   }, [product, reset]);
 
   const selectedCategoryId = useWatch({ control, name: "categoryId" });
-  const selectedIcon = useWatch({ control, name: "icon" });
   const selectedComboItemIds = useWatch({ control, name: "comboItemIds" }) ?? [];
   const rawTagIds = useWatch({ control, name: "tagIds" });
   const selectedTagIds = useMemo(() => rawTagIds ?? [], [rawTagIds]);
@@ -99,7 +97,6 @@ export default function ProductForm({
 
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
   const selectedCategorySlug = selectedCategory?.slug ?? "";
-  const suggestedIcons = getSuggestedThenAllIconOptions(selectedCategorySlug);
   const isCombo = selectedCategorySlug === "combos";
 
   const nonComboProducts = products.filter(
@@ -117,12 +114,6 @@ export default function ProductForm({
     const price = (comboItem1?.price ?? 0) + (comboItem2?.price ?? 0);
     setValue("price", price);
   }, [isCombo, comboItem1, comboItem2, setValue]);
-
-  useEffect(() => {
-    if (!selectedCategorySlug || !selectedIcon) return;
-    const iconIsValidForCategory = suggestedIcons.some((o) => o.id === selectedIcon);
-    if (!iconIsValidForCategory) setValue("icon", "");
-  }, [selectedCategorySlug, selectedIcon, suggestedIcons, setValue]);
 
   async function onSubmit(values: ProductFormValues) {
     setError(null);
@@ -277,39 +268,52 @@ export default function ProductForm({
             control={control}
             render={({ field }) => (
               <Box>
-                <Stack direction="row" sx={{ alignItems: "center", mb: 1.25 }}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Ícono</Typography>
-                </Stack>
-                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1 }}>Ícono</Typography>
+                <Box>
                   <Chip
-                    label={<NoFoodOutlinedIcon fontSize="small" />}
-                    aria-label="Sin ícono"
+                    label="Sin ícono"
                     clickable={!isLoading}
                     onClick={() => field.onChange("")}
                     variant={!field.value ? "filled" : "outlined"}
                     color={!field.value ? "primary" : "default"}
-                    sx={{ minWidth: 44 }}
+                    size="small"
+                    sx={{ mb: 1 }}
                   />
-                  {suggestedIcons.map((option) => {
-                    const selected = field.value === option.id;
-                    const Icon = option.Icon;
-                    return (
-                      <Chip
-                        key={option.id}
-                        label={<Icon fontSize="small" />}
-                        aria-label={option.label}
-                        clickable={!isLoading}
-                        onClick={() => field.onChange(option.id)}
-                        variant={selected ? "filled" : "outlined"}
-                        color={selected ? "primary" : "default"}
-                        sx={{ minWidth: 44 }}
-                      />
-                    );
-                  })}
-                </Stack>
+                  <Stack spacing={1.25} sx={{ maxHeight: 220, overflowY: "auto", pr: 0.5 }}>
+                    {PRODUCT_EMOJI_GROUPS.map((group) => (
+                      <Box key={group.label}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 800, color: "#94a3b8", mb: 0.5 }}>
+                          {group.label}
+                        </Typography>
+                        <Stack direction="row" useFlexGap sx={{ flexWrap: "wrap", gap: 0.5 }}>
+                          {group.emojis.map((em) => (
+                            <Box
+                              key={em}
+                              onClick={() => { if (!isLoading) field.onChange(em); }}
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 22,
+                                cursor: "pointer",
+                                borderRadius: 1.5,
+                                border: field.value === em ? "2px solid #1f8dd6" : "1px solid #e2e8f0",
+                                bgcolor: field.value === em ? "#e0f2fe" : "white",
+                              }}
+                            >
+                              {em}
+                            </Box>
+                          ))}
+                        </Stack>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
                 {field.value && (
                   <Typography sx={{ color: "text.secondary", fontSize: 12, mt: 1 }}>
-                    {getProductIconOption(field.value)?.label ?? "Ícono personalizado"}
+                    Seleccionado: <span style={{ fontSize: 18 }}>{resolveProductEmoji(field.value)}</span>
                   </Typography>
                 )}
                 {errors.icon?.message && (

@@ -38,19 +38,18 @@ import Typography from "@mui/material/Typography";
 import { useState, useMemo, useRef, useEffect } from "react";
 
 import { formatCurrency } from "@/lib/currency";
-import { getProductIconOption } from "@/modules/products/constants/product-icons";
+import { resolveProductEmoji } from "@/modules/products/constants/product-icons";
 import type { ProductDto, ProductCategoryDto } from "@/modules/products/schemas/product.schema";
 import type { StudentDto } from "@/modules/students/schemas/student.schema";
 
 function ProductIcon({ iconId, size }: { iconId: string | null; size: number }) {
-  const option = iconId ? getProductIconOption(iconId) : null;
-  if (!option) {
+  const emoji = resolveProductEmoji(iconId);
+  if (!emoji) {
     return (
       <ShoppingBagOutlinedIcon sx={{ fontSize: size, color: "#475569" }} />
     );
   }
-  const Icon = option.Icon;
-  return <Icon sx={{ fontSize: size, color: "#475569" }} />;
+  return <Box component="span" sx={{ fontSize: size, lineHeight: 1 }}>{emoji}</Box>;
 }
 
 type CartItem = {
