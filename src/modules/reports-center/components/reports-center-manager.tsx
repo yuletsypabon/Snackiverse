@@ -162,6 +162,7 @@ export function VentasDetalladas() {
 
   // Auto-carga inicial: ventas de hoy (aparecen a medida que se registran al recargar).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
