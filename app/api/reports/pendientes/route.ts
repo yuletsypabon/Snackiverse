@@ -19,9 +19,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Tipo inválido." }, { status: 400 });
   }
 
-  const fromDate = new Date(from);
-  const toDate = new Date(to);
-  toDate.setHours(23, 59, 59, 999);
+  // Interpretar las fechas en zona horaria de Colombia (UTC-5, sin horario de verano),
+  // para cubrir el día completo local sin importar la zona horaria del servidor.
+  const fromDate = new Date(`${from}T00:00:00.000-05:00`);
+  const toDate = new Date(`${to}T23:59:59.999-05:00`);
 
   const students = await prisma.student.findMany({
     where: { isActive: true, type: type as "monthly" | "biweekly" | "weekly" },
