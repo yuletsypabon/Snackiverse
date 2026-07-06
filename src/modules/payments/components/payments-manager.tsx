@@ -25,7 +25,8 @@ import Typography from "@mui/material/Typography";
 import { useState, useMemo, useRef, useEffect } from "react";
 
 import { formatCurrency } from "@/lib/currency";
-import type { StudentDto } from "@/modules/students/schemas/student.schema";
+import { studentTypeLabels } from "@/modules/students/schemas/student.schema";
+import type { StudentDto, StudentType } from "@/modules/students/schemas/student.schema";
 import type { PaymentDto } from "../services/payment.service";
 
 type Props = {
@@ -70,7 +71,7 @@ export function PaymentsManager({ students, initialPayments }: Props) {
     const q = query.trim().toLowerCase();
     if (!q) return [];
     return students
-      .filter((s) => s.isActive && (s.type === "weekly" || s.type === "monthly" || s.type === "biweekly") && s.name.toLowerCase().includes(q))
+      .filter((s) => s.isActive && s.name.toLowerCase().includes(q))
       .slice(0, 6);
   }, [students, query]);
 
@@ -139,7 +140,7 @@ export function PaymentsManager({ students, initialPayments }: Props) {
                 {/* Estudiante */}
                 <Box>
                   <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#64748b", mb: 0.75 }}>
-                    Estudiante (tiquetera semanal o mensual)
+                    Estudiante
                   </Typography>
                   <Box ref={inputRef} sx={{ position: "relative" }}>
                     <TextField
@@ -175,7 +176,7 @@ export function PaymentsManager({ students, initialPayments }: Props) {
                           >
                             <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{s.name}</Typography>
                             <Typography sx={{ fontSize: 12, color: "#64748b" }}>
-                              {s.grade} · {s.type === "weekly" ? "Semanal" : s.type === "monthly" ? "Mensual" : "Quincenal"}
+                              {s.grade} · {studentTypeLabels[s.type as StudentType]}
                             </Typography>
                           </Box>
                         ))}

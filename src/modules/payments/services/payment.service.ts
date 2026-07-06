@@ -66,12 +66,20 @@ export async function createPayment(
 ): Promise<PaymentDto> {
   const student = await prisma.student.findUnique({
     where: { id: studentId },
-    select: { type: true },
+    select: { type: true, balance: true },
   });
 
   const isTiquetera = student?.type && ["weekly", "biweekly", "monthly"].includes(student.type);
   const newExpiresAt = isTiquetera
     ? calculateExpiresAt(student!.type, nextBusinessDay(new Date()))
+    : undefined;
+
+  // Estudiante de pago anticipado con deuda (saldo negativo): el pago abona a la
+  // deuda (cada abono la reduce). No pasa de 0 — para agregar crédito se usan las
+  // recargas. El historial de consumo (las ventas) no se toca.
+  const hasDebt = !!student && !isTiquetera && student.balance < 0;
+  const newBalance = hasDebt
+    ? Math.min(0, student!.balance + amount)
     : undefined;
 
   const [row] = await prisma.$transaction([
@@ -87,6 +95,12 @@ export async function createPayment(
       ? [prisma.student.update({
           where: { id: studentId },
           data: { tiqueteraExpiresAt: newExpiresAt },
+        })]
+      : []),
+    ...(newBalance !== undefined
+      ? [prisma.student.update({
+          where: { id: studentId },
+          data: { balance: newBalance },
         })]
       : []),
   ]);
