@@ -10,7 +10,7 @@ export const studentTypesSchema = [
 export type StudentType = (typeof studentTypesSchema)[number];
 
 export const studentTypeLabels: Record<StudentType, string> = {
-    prepaid: "Prepago",
+    prepaid: "Pago anticipado",
     weekly: "Semanal",
     monthly: "Mensual",
     biweekly: "Quincenal",

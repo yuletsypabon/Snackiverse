@@ -19,7 +19,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { formatCurrency } from "@/lib/currency";
 import {
   getProductIconOption,
-  getProductIconOptionsByCategory,
+  getSuggestedThenAllIconOptions,
 } from "../constants/product-icons";
 import type {
   ProductCategoryDto,
@@ -99,7 +99,7 @@ export default function ProductForm({
 
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
   const selectedCategorySlug = selectedCategory?.slug ?? "";
-  const suggestedIcons = getProductIconOptionsByCategory(selectedCategorySlug);
+  const suggestedIcons = getSuggestedThenAllIconOptions(selectedCategorySlug);
   const isCombo = selectedCategorySlug === "combos";
 
   const nonComboProducts = products.filter(

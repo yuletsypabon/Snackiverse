@@ -51,9 +51,10 @@ type AdminShellProps = {
     activeHref: string;
     children: React.ReactNode;
     role?: string;
+    userName?: string;
 };
 
-function SidebarContent({ activeHref, collapsed, onToggle, role }: { activeHref: string; collapsed: boolean; onToggle: () => void; role?: string }) {
+function SidebarContent({ activeHref, collapsed, onToggle, role, userName }: { activeHref: string; collapsed: boolean; onToggle: () => void; role?: string; userName?: string }) {
     const isAdmin = role === "admin";
     const visibleNav = navigation.filter((item) => !item.adminOnly || isAdmin);
     return (
@@ -121,8 +122,8 @@ function SidebarContent({ activeHref, collapsed, onToggle, role }: { activeHref:
                     minHeight: 56,
                     px: 2,
                 }}>
-                    <Typography sx={{ flexGrow: 1, fontSize: 14, fontWeight: 900 }}>
-                        {isAdmin ? "Administrador" : "Vendedor"}
+                    <Typography noWrap sx={{ flexGrow: 1, fontSize: 14, fontWeight: 900 }}>
+                        {userName || (isAdmin ? "Administrador" : "Vendedor")}
                     </Typography>
                     <Chip
                         label={isAdmin ? "admin" : "vendedor"}
@@ -200,7 +201,7 @@ function SidebarContent({ activeHref, collapsed, onToggle, role }: { activeHref:
     );
 }
 
-export function AdminShell({ activeHref, children, role }: AdminShellProps) {
+export function AdminShell({ activeHref, children, role, userName }: AdminShellProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
 
@@ -233,6 +234,11 @@ export function AdminShell({ activeHref, children, role }: AdminShellProps) {
                     <Typography sx={{ ml: 1.5, fontWeight: 900, fontSize: 16, flexGrow: 1 }}>
                         SnackieVerse
                     </Typography>
+                    {userName && (
+                        <Typography noWrap sx={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.85)", maxWidth: 160 }}>
+                            {userName}
+                        </Typography>
+                    )}
                 </Toolbar>
             </AppBar>
 
@@ -257,6 +263,7 @@ export function AdminShell({ activeHref, children, role }: AdminShellProps) {
                     collapsed={false}
                     onToggle={() => setMobileOpen(false)}
                     role={role}
+                    userName={userName}
                 />
             </Drawer>
 
@@ -284,6 +291,7 @@ export function AdminShell({ activeHref, children, role }: AdminShellProps) {
                     collapsed={collapsed}
                     onToggle={() => setCollapsed((v) => !v)}
                     role={role}
+                    userName={userName}
                 />
             </Box>
 

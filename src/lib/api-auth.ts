@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/modules/auth/utils/jwt";
 
 /**
@@ -34,15 +35,24 @@ export async function authorizeAdmin(): Promise<NextResponse | null> {
  * Lee el token de las cookies y retorna el usuario de sesión.
  * Para usar en Server Components (páginas) — nunca en API routes.
  */
-export async function getSessionUser(): Promise<{ userId: string; role: string } | null> {
+export async function getSessionUser(): Promise<{ userId: string; role: string; name: string } | null> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
     if (!token) return null;
     const session = await verifyToken(token);
     if (!session) return null;
+
+    const userId = session["userId"] as string;
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, role: true },
+    });
+    if (!user) return null;
+
     return {
-        userId: session["userId"] as string,
-        role: session["role"] as string,
+        userId,
+        role: user.role,
+        name: user.name,
     };
 }
 

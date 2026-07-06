@@ -165,3 +165,18 @@ export function isKnownProductIconId(iconId?: string | null) {
 
   return iconMap.has(iconId);
 }
+
+// Devuelve la librería completa de iconos, sin duplicados.
+export function getAllProductIconOptions(): ProductIconOption[] {
+  return Array.from(iconMap.values());
+}
+
+// Iconos sugeridos por categoría primero, y debajo el resto de la librería completa.
+export function getSuggestedThenAllIconOptions(
+  categorySlug?: string | null
+): ProductIconOption[] {
+  const suggested = getProductIconOptionsByCategory(categorySlug);
+  const seen = new Set(suggested.map((o) => o.id));
+  const rest = getAllProductIconOptions().filter((o) => !seen.has(o.id));
+  return [...suggested, ...rest];
+}

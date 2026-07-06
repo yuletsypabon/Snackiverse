@@ -10,7 +10,7 @@ export default async function ReportsCenterPage() {
   ]);
 
   return (
-    <AdminShell activeHref="/reports-center" role={session?.role}>
+    <AdminShell activeHref="/reports-center" role={session?.role} userName={session?.name}>
       <ReportsManager students={students} />
     </AdminShell>
   );

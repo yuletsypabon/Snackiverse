@@ -14,7 +14,7 @@ export default async function CatalogPage() {
   ]);
 
   return (
-    <AdminShell activeHref="/catalog" role={session?.role}>
+    <AdminShell activeHref="/catalog" role={session?.role} userName={session?.name}>
       <CatalogManager initialCategories={categories} initialTags={tags} />
     </AdminShell>
   );

@@ -18,7 +18,7 @@ export default async function SalesPage() {
     ]);
 
     return (
-        <AdminShell activeHref="/sales" role={session?.role}>
+        <AdminShell activeHref="/sales" role={session?.role} userName={session?.name}>
             <SaleRegister
                 products={products}
                 categories={categories}

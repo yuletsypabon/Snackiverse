@@ -12,7 +12,7 @@ export default async function PaymentsPage() {
   ]);
 
   return (
-    <AdminShell activeHref="/payments" role={session?.role}>
+    <AdminShell activeHref="/payments" role={session?.role} userName={session?.name}>
       <PaymentsManager students={students} initialPayments={payments} />
     </AdminShell>
   );

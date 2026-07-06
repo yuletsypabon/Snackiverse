@@ -18,7 +18,7 @@ export default async function ProductsPage() {
   ]);
 
   return (
-    <AdminShell activeHref="/products" role={session?.role}>
+    <AdminShell activeHref="/products" role={session?.role} userName={session?.name}>
       <ProductTable initialProducts={products} categories={categories} tags={tags} />
     </AdminShell>
   );

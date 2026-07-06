@@ -11,7 +11,7 @@ export default async function UsersPage() {
         getSessionUser(),
     ]);
     return (
-        <AdminShell activeHref="/users" role={session?.role}>
+        <AdminShell activeHref="/users" role={session?.role} userName={session?.name}>
             <VendorManager initialVendors={vendors} />
         </AdminShell>
     );

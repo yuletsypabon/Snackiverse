@@ -9,7 +9,7 @@ export default async function RechargesPage() {
     getSessionUser(),
   ]);
   return (
-    <AdminShell activeHref="/recharges" role={session?.role}>
+    <AdminShell activeHref="/recharges" role={session?.role} userName={session?.name}>
       <RechargeManager students={students} />
     </AdminShell>
   );

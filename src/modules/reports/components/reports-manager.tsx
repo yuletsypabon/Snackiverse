@@ -31,7 +31,9 @@ import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 
 import { formatCurrency } from "@/lib/currency";
 import { VentasDetalladas, PazYSalvo, Deudores } from "@/modules/reports-center/components/reports-center-manager";
-import type { StudentDto } from "@/modules/students/schemas/student.schema";
+import { studentTypeLabels } from "@/modules/students/schemas/student.schema";
+import { LOGO_COMPROBANTE } from "@/modules/reports/constants/logo-base64";
+import type { StudentDto, StudentType } from "@/modules/students/schemas/student.schema";
 
 type SaleItem = { name: string; quantity: number; unitPrice: number; subtotal: number };
 type SaleEntry = { id: string; total: number; createdAt: string; items: SaleItem[] };
@@ -110,7 +112,7 @@ function ComprobanteTiquetera({
       <Box sx={{ bgcolor: "#0a2540", px: 2.5, pt: 2, pb: 1.5, textAlign: "center" }}>
         <Box sx={{ mb: 1 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/sv1.jpeg" alt="SnackieVerse" style={{ width: 110, height: "auto", borderRadius: 8 }} crossOrigin="anonymous" />
+          <img src={LOGO_COMPROBANTE} alt="SnackieVerse" style={{ width: 110, height: "auto", borderRadius: 8 }} />
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, mt: 0.5 }}>
           <StorefrontOutlinedIcon sx={{ fontSize: 13, color: "#94a3b8" }} />
@@ -440,10 +442,9 @@ function Comprobante({ data, innerRef }: { data: ReportData; innerRef: React.Ref
         <Box sx={{ mb: 1 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo/sv1.jpeg"
+            src={LOGO_COMPROBANTE}
             alt="SnackieVerse"
             style={{ width: 110, height: "auto", borderRadius: 8 }}
-            crossOrigin="anonymous"
           />
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, mt: 0.5 }}>
@@ -597,7 +598,7 @@ function Comprobante({ data, innerRef }: { data: ReportData; innerRef: React.Ref
           ) : (
             <Box sx={{ bgcolor: "#1e3a5f", borderRadius: 1, px: 1, py: 0.5 }}>
               <Typography sx={{ fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>
-                Pago al cierre
+                Pago {studentTypeLabels[data.student.type as StudentType] ?? "al cierre"}
               </Typography>
             </Box>
           )}
@@ -708,11 +709,21 @@ export function ReportsManager({ students }: Props) {
       const file = new File([blob], filename, { type: "image/png" });
       const phone = report.student.guardianWhatsapp;
 
+      const periodoMap: Record<string, string> = {
+        weekly: "de esta semana",
+        biweekly: "de esta quincena",
+        monthly: "de este mes",
+        individual: "de este período",
+      };
+      const periodo = periodoMap[reportType] ?? "del período";
+      const mensaje = `Te envío el comprobante ${periodo} del consumo de ${report.student.name}`;
+
       // Móvil: compartir imagen directamente a WhatsApp u otras apps
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `Comprobante ${report.student.name}`,
+          title: mensaje,
+          text: mensaje,
         });
         return;
       }
@@ -735,8 +746,8 @@ export function ReportsManager({ students }: Props) {
 
       if (phone) {
         const text = copied
-          ? encodeURIComponent(`Hola, aquí le envío el comprobante de *${report.student.name}* (${report.student.grade}). La imagen fue copiada — solo péguela en este chat con Ctrl+V.`)
-          : encodeURIComponent(`Hola, aquí le envío el comprobante de *${report.student.name}* (${report.student.grade}). La imagen fue descargada en su computador.`);
+          ? encodeURIComponent(`${mensaje}. La imagen fue copiada — solo péguela en este chat con Ctrl+V.`)
+          : encodeURIComponent(`${mensaje}. La imagen fue descargada en su computador.`);
         setTimeout(() => {
           window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
         }, 300);
@@ -752,7 +763,7 @@ export function ReportsManager({ students }: Props) {
     } finally {
       setDownloading(false);
     }
-  }, [report]);
+  }, [report, reportType]);
 
   return (
     <Stack spacing={3}>

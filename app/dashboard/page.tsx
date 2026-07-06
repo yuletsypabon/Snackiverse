@@ -96,7 +96,7 @@ export default async function DashboardPage() {
   };
 
   return (
-    <AdminShell activeHref="/dashboard" role={session?.role}>
+    <AdminShell activeHref="/dashboard" role={session?.role} userName={session?.name}>
       <Stack spacing={{ xs: 1.5, md: 2.5 }}>
 
         {/* Encabezado */}

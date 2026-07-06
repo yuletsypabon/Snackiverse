@@ -14,7 +14,7 @@ export default async function StudentsPage() {
     ]);
 
     return (
-        <AdminShell activeHref="/students" role={session?.role}>
+        <AdminShell activeHref="/students" role={session?.role} userName={session?.name}>
             <StudentManager initialStudents={students} initialTags={tags} />
         </AdminShell>
     );
