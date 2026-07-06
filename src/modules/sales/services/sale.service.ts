@@ -103,3 +103,36 @@ export async function createSale(
     })),
   };
 }
+
+/**
+ * Elimina una venta y revierte su efecto en el saldo.
+ * Si la venta era de un estudiante de pago anticipado (prepaid), se le descontó
+ * el total al crearla, así que al eliminarla se le devuelve. Los SaleItem se
+ * borran en cascada (onDelete: Cascade). Solo debe invocarse desde una ruta admin.
+ */
+export async function deleteSale(saleId: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const sale = await tx.sale.findUnique({
+      where: { id: saleId },
+      select: { studentId: true, total: true },
+    });
+
+    if (!sale) throw new Error("Venta no encontrada");
+
+    if (sale.studentId) {
+      const student = await tx.student.findUnique({
+        where: { id: sale.studentId },
+        select: { type: true },
+      });
+
+      if (student?.type === "prepaid") {
+        await tx.student.update({
+          where: { id: sale.studentId },
+          data: { balance: { increment: sale.total } },
+        });
+      }
+    }
+
+    await tx.sale.delete({ where: { id: saleId } });
+  });
+}

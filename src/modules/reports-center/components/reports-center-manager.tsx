@@ -5,6 +5,14 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import MoneyOffOutlinedIcon from "@mui/icons-material/MoneyOffOutlined";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -27,7 +35,7 @@ import TableRow from "@mui/material/TableRow";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, type MouseEvent } from "react";
 
 import { formatCurrency } from "@/lib/currency";
 
@@ -68,10 +76,23 @@ function formatDate(iso: string) {
   }).format(new Date(iso));
 }
 
+function todayInput() {
+  const d = new Date();
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().slice(0, 10);
+}
+
+function daysAgoInput(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().slice(0, 10);
+}
+
 // ── Tab 1: Ventas detalladas ───────────────────────────────────────────────
 export function VentasDetalladas() {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState(daysAgoInput(7));
+  const [to, setTo] = useState(todayInput());
   const [rows, setRows] = useState<SaleRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +100,10 @@ export function VentasDetalladas() {
   // page: página actual. total: número de ventas en el rango (no ítems).
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [menuSaleId, setMenuSaleId] = useState<string | null>(null);
+  const [saleToDelete, setSaleToDelete] = useState<SaleRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const PAGE_SIZE = 100;
 
@@ -111,6 +136,35 @@ export function VentasDetalladas() {
     setPage(next);
     load(next);
   }, [load]);
+
+  const openMenu = (e: MouseEvent<HTMLElement>, saleId: string) => {
+    setMenuAnchor(e.currentTarget);
+    setMenuSaleId(saleId);
+  };
+
+  const closeMenu = () => {
+    setMenuAnchor(null);
+    setMenuSaleId(null);
+  };
+
+  const confirmDelete = useCallback(async () => {
+    if (!saleToDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/sales/${saleToDelete.saleId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "No se pudo eliminar la venta."); return; }
+      setSaleToDelete(null);
+      load(page);
+    } catch { setError("Error de conexión al eliminar."); }
+    finally { setDeleting(false); }
+  }, [saleToDelete, load, page]);
+
+  // Auto-carga inicial: ventas de hoy (aparecen a medida que se registran al recargar).
+  useEffect(() => {
+    load(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const totalGeneral = rows.reduce((s, r) => s + r.subtotal, 0);
@@ -155,6 +209,7 @@ export function VentasDetalladas() {
                       {["FECHA", "ESTUDIANTE", "GRADO", "PRODUCTO", "CANT.", "VALOR", "VENDEDOR", "TELÉFONO"].map((h) => (
                         <TableCell key={h} sx={{ fontWeight: 900, fontSize: 11, color: "#64748b", letterSpacing: "0.06em" }}>{h}</TableCell>
                       ))}
+                      <TableCell sx={{ width: 44 }} />
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -168,6 +223,11 @@ export function VentasDetalladas() {
                         <TableCell sx={{ fontWeight: 700, color: "#16a34a", fontSize: 13 }}>{formatCurrency(r.subtotal)}</TableCell>
                         <TableCell sx={{ fontSize: 13, color: "#475569" }}>{r.vendorName}</TableCell>
                         <TableCell sx={{ fontSize: 12, color: "#94a3b8" }}>{r.guardianWhatsapp ?? "—"}</TableCell>
+                        <TableCell align="right" sx={{ width: 44, pr: 1 }}>
+                          <IconButton size="small" aria-label="acciones" onClick={(e) => openMenu(e, r.saleId)}>
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -209,6 +269,33 @@ export function VentasDetalladas() {
           )}
         </Paper>
       )}
+
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu}>
+        <MenuItem
+          onClick={() => {
+            setSaleToDelete(rows.find((r) => r.saleId === menuSaleId) ?? null);
+            closeMenu();
+          }}
+          sx={{ color: "#dc2626", fontWeight: 700, fontSize: 14, gap: 1 }}
+        >
+          <DeleteOutlineIcon fontSize="small" /> Eliminar venta
+        </MenuItem>
+      </Menu>
+
+      <Dialog open={Boolean(saleToDelete)} onClose={() => { if (!deleting) setSaleToDelete(null); }} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 900 }}>Eliminar venta</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 14, color: "#475569" }}>
+            ¿Seguro que deseas eliminar esta venta de <b>{saleToDelete?.studentName}</b>{saleToDelete ? ` del ${formatDate(saleToDelete.createdAt)}` : ""}? Se eliminará la venta completa (todos sus productos) y, si es de pago anticipado, se le devolverá el saldo. Esta acción no se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setSaleToDelete(null)} disabled={deleting} color="inherit">Cancelar</Button>
+          <Button onClick={confirmDelete} disabled={deleting} variant="contained" color="error">
+            {deleting ? "Eliminando..." : "Eliminar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }
