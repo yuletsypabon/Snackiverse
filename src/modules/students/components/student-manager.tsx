@@ -234,9 +234,10 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                 name: form.name,
                 grade: form.grade,
                 type: form.type,
-                balance: form.balance,
                 restrictionTagIds: form.restrictionTagIds,
                 guardianWhatsapp: form.guardianWhatsapp,
+                // El saldo solo se define al crear; al editar no se toca.
+                ...(isEditing ? {} : { balance: form.balance }),
             };
 
             const response = await fetch(
@@ -659,6 +660,8 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                                     value={form.balance}
                                     onChange={(e) => updateForm("balance", e.target.value)}
                                     slotProps={{ htmlInput: { min: 0, step: 100 } }}
+                                    disabled={Boolean(editingId)}
+                                    helperText={editingId ? "El saldo se ajusta con Recargas y Pagos, no aquí." : undefined}
                                     fullWidth
                                 />
                             )}
