@@ -41,6 +41,7 @@ import { formatCurrency } from "@/lib/currency";
 import { resolveProductEmoji } from "@/modules/products/constants/product-icons";
 import type { ProductDto, ProductCategoryDto } from "@/modules/products/schemas/product.schema";
 import type { StudentDto } from "@/modules/students/schemas/student.schema";
+import { normalizeText } from "@/lib/text";
 
 function ProductIcon({ iconId, size }: { iconId: string | null; size: number }) {
   const emoji = resolveProductEmoji(iconId);
@@ -89,10 +90,10 @@ export function SaleRegister({ products, categories, students }: Props) {
     product.tags.some((t) => restrictedTagIds.has(t.id));
 
   const filteredStudents = useMemo(() => {
-    const q = studentQuery.trim().toLowerCase();
+    const q = normalizeText(productQuery);
     if (!q) return [];
     return students
-      .filter((s) => s.isActive && s.name.toLowerCase().includes(q))
+      .filter((s) => s.isActive && normalizeText(s.name).includes(q))
       .slice(0, 6);
   }, [students, studentQuery]);
 
@@ -101,8 +102,8 @@ export function SaleRegister({ products, categories, students }: Props) {
       if (!p.isActive) return false;
       if (selectedCategoryId && p.categoryId !== selectedCategoryId) return false;
       if (productQuery) {
-        const q = productQuery.toLowerCase();
-        if (!p.name.toLowerCase().includes(q)) return false;
+        const q = normalizeText(productQuery);
+        if (!normalizeText(p.name).includes(q)) return false;
       }
       return true;
     });
