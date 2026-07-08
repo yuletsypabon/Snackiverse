@@ -133,7 +133,7 @@ export async function updateStudent(id: string, input: UpdateStudentInput) {
             ...(input.grade !== undefined && { grade: input.grade }),
             ...(input.type !== undefined && { type: input.type }),
             ...tiqueteraUpdate,
-            ...(input.balance !== undefined && { balance: input.balance }),
+            // balance es inmutable vía edición: solo cambia por ventas/recargas/pagos
             ...(input.isActive !== undefined && { isActive: input.isActive }),
             ...(input.guardianWhatsapp !== undefined && {
                 guardianWhatsapp: normalizeOptionalText(input.guardianWhatsapp),

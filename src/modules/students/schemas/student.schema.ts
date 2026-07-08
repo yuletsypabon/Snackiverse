@@ -32,9 +32,14 @@ export const createStudentSchema = z.object({
     tiqueteraExpiresAt: z.string().optional().nullable(),
 });
 
-export const updateStudentSchema = createStudentSchema.partial().extend({
-    isActive: z.boolean().optional(),
-});
+// El saldo es un valor derivado (ventas/recargas/pagos): se omite de la
+// edición para que NO pueda modificarse manualmente, ni a favor ni en contra.
+export const updateStudentSchema = createStudentSchema
+    .omit({ balance: true })
+    .partial()
+    .extend({
+        isActive: z.boolean().optional(),
+    });
 
 export type CreateStudentInput = z.infer<typeof createStudentSchema>;
 export type UpdateStudentInput = z.infer<typeof updateStudentSchema>;

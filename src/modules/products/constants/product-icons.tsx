@@ -187,6 +187,10 @@ export function getSuggestedThenAllIconOptions(
 export type ProductEmojiGroup = { label: string; emojis: string[] };
 
 export const PRODUCT_EMOJI_GROUPS: ProductEmojiGroup[] = [
+  // Nota: Unicode NO tiene un emoji de "paquete/bolsa de papas". Estos son las
+  // mejores aproximaciones disponibles (papa, papas fritas, maíz para choclitos,
+  // crispetas, bolsa/paquete). Para fidelidad de marca se necesitan íconos de imagen.
+  { label: "Paquetes y papas", emojis: ["🥔","🍟","🍿","🌽","🥨","🫓","🧂","🥜","🌰","🥡","🛍️","📦","🧺"] },
   { label: "Comidas", emojis: ["🍔","🍕","🌭","🥪","🌮","🌯","🥙","🍟","🍗","🍖","🥟","🍜","🍝","🍲","🥘","🫓","🧆","🍱","🍛","🥗"] },
   { label: "Bebidas", emojis: ["🥤","🧃","🧋","☕","🍵","🥛","🧉","🍶","🫖","💧","🧊","🥂"] },
   { label: "Dulces", emojis: ["🍪","🍩","🍰","🧁","🎂","🍫","🍬","🍭","🍮","🍯","🥮","🍡","🍦","🍨","🍧"] },
