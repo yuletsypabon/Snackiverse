@@ -17,4 +17,5 @@ export const createVendorSchema = z.object({
     name: string;
     email: string;
     createdAt: string;
+    canEnterConsumption: boolean;
 };

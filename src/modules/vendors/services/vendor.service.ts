@@ -2,14 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/modules/auth/utils/password";
 import type { CreateVendorInput, VendorDto } from "../schemas/vendor.schema";
 
-function toVendorDto(v: { id: string; name: string; email: string; createdAt: Date }): VendorDto {
-    return { id: v.id, name: v.name, email: v.email, createdAt: v.createdAt.toISOString() };
+function toVendorDto(v: { id: string; name: string; email: string; createdAt: Date; canEnterConsumption: boolean }): VendorDto {
+    return { id: v.id, name: v.name, email: v.email, createdAt: v.createdAt.toISOString(), canEnterConsumption: v.canEnterConsumption };
     }
 
     export async function listVendors(): Promise<VendorDto[]> {
     const vendors = await prisma.user.findMany({
         where: { role: "vendor" },
-        select: { id: true, name: true, email: true, createdAt: true },
+        select: { id: true, name: true, email: true, createdAt: true, canEnterConsumption: true },
         orderBy: { createdAt: "desc" },
     });
     return vendors.map(toVendorDto);
@@ -29,7 +29,7 @@ function toVendorDto(v: { id: string; name: string; email: string; createdAt: Da
         password: await hashPassword(input.password),
         role: "vendor",
         },
-        select: { id: true, name: true, email: true, createdAt: true },
+        select: { id: true, name: true, email: true, createdAt: true, canEnterConsumption: true },
     });
 
     return toVendorDto(vendor);
@@ -45,5 +45,16 @@ export async function updateVendorPassword(id: string, newPassword: string): Pro
     await prisma.user.update({
         where: { id },
         data: { password: await hashPassword(newPassword) },
+    });
+}
+
+export async function setVendorConsumption(id: string, value: boolean): Promise<void> {
+    const vendor = await prisma.user.findUnique({ where: { id, role: "vendor" } });
+    if (!vendor) {
+        throw new Error("Vendedor no encontrado.");
+    }
+    await prisma.user.update({
+        where: { id },
+        data: { canEnterConsumption: value },
     });
 }

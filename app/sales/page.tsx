@@ -23,6 +23,8 @@ export default async function SalesPage() {
                 products={products}
                 categories={categories}
                 students={students}
+                role={session?.role}
+                canEnterConsumption={session?.canEnterConsumption ?? false}
             />
         </AdminShell>
     );

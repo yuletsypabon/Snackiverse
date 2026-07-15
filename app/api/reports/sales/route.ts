@@ -49,8 +49,23 @@ export async function GET(req: NextRequest) {
   ]);
 
   // Una fila por ítem de venta
-  const rows = sales.flatMap((s) =>
-    s.saleItems.map((si) => ({
+  const rows = sales.flatMap((s) => {
+    // Venta de consumo (sin ítems): una fila con el total como "Consumo".
+    if (s.saleItems.length === 0) {
+      return [{
+        saleId: s.id,
+        createdAt: s.createdAt.toISOString(),
+        studentName: s.student?.name ?? "Venta libre",
+        studentGrade: s.student?.grade ?? "—",
+        guardianWhatsapp: s.student?.guardianWhatsapp ?? null,
+        productName: "Consumo (monto directo)",
+        quantity: 1,
+        unitPrice: s.total,
+        subtotal: s.total,
+        vendorName: s.vendor.name,
+      }];
+    }
+    return s.saleItems.map((si) => ({
       saleId: s.id,
       createdAt: s.createdAt.toISOString(),
       studentName: s.student?.name ?? "Venta libre",
@@ -61,8 +76,8 @@ export async function GET(req: NextRequest) {
       unitPrice: si.unitPrice,
       subtotal: si.subtotal,
       vendorName: s.vendor.name,
-    }))
-  );
+    }));
+  });
 
   return NextResponse.json({ rows, total: totalSales, page, pageSize });
 }

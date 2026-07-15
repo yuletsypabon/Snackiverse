@@ -29,3 +29,12 @@ export type SaleDto = {
   createdAt: string;
   items: SaleItemDto[];
 };
+
+
+// Venta de "consumo": un monto directo, sin productos. Solo para vendedores con la marca.
+export const consumptionSaleSchema = z.object({
+  studentId: z.string().min(1, "Selecciona un estudiante"),
+  amount: z.coerce.number().int().positive("El monto debe ser mayor a 0"),
+});
+
+export type ConsumptionSaleInput = z.infer<typeof consumptionSaleSchema>;
