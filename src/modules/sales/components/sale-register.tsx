@@ -256,7 +256,7 @@ type Props = {
   products: ProductDto[];
   categories: ProductCategoryDto[];
   students: StudentDto[];
-  role?: "admin" | "vendor";
+  role?: string;
   canEnterConsumption?: boolean;
 };
 
@@ -961,7 +961,6 @@ export function SaleRegister({ products, categories, students, role = "vendor", 
               <TableCell sx={{ fontWeight: 900, fontSize: 11, color: "#64748b" }}>PRODUCTO</TableCell>
               <TableCell align="center" sx={{ fontWeight: 900, fontSize: 11, color: "#64748b" }}>CANT</TableCell>
               <TableCell align="right" sx={{ fontWeight: 900, fontSize: 11, color: "#64748b" }}>SUBTOTAL</TableCell>
-              <TableCell sx={{ width: 32 }} />
             </TableRow>
           </TableHead>
           <TableBody>
@@ -974,63 +973,40 @@ export function SaleRegister({ products, categories, students, role = "vendor", 
                   </Stack>
                 </TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" sx={{ alignItems: "center", justifyContent: "center", gap: 0.5 }}>
-                    <IconButton size="small"
-                      onClick={() => changeQty(item.productId, -1)}
-                      sx={{ width: 22, height: 22, bgcolor: "#f1f5f9", "&:hover": { bgcolor: "#e2e8f0" } }}
-                    >
-                      <RemoveIcon sx={{ fontSize: 12 }} />
-                    </IconButton>
-                    <Typography sx={{ fontWeight: 900, fontSize: 13, minWidth: 20, textAlign: "center" }}>
-                      {item.quantity}
-                    </Typography>
-                    <IconButton size="small"
-                      onClick={() => changeQty(item.productId, 1)}
-                      sx={{ width: 22, height: 22, bgcolor: "#f1f5f9", "&:hover": { bgcolor: "#e2e8f0" } }}
-                    >
-                      <AddIcon sx={{ fontSize: 12 }} />
-                    </IconButton>
-                  </Stack>
+                  <Typography sx={{ fontWeight: 900, fontSize: 13 }}>{item.quantity}</Typography>
                 </TableCell>
                 <TableCell align="right">
-                  <Typography sx={{ fontWeight: 700, fontSize: 13, color: "#16a34a" }}>
+                  <Typography sx={{ fontWeight: 900, fontSize: 13, color: "#16a34a" }}>
                     {formatCurrency(item.price * item.quantity)}
                   </Typography>
-                </TableCell>
-                <TableCell>
-                  <IconButton size="small"
-                    onClick={() => removeFromCart(item.productId)}
-                    sx={{ color: "#e74c3c", "&:hover": { bgcolor: "#fde1dd" } }}
-                  >
-                    <DeleteOutlineIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
 
-        <Divider sx={{ my: 0 }} />
-
-        <Box sx={{ bgcolor: "#0a2540", borderRadius: "0 0 4px 4px", px: 2, py: 1.25, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography sx={{ fontWeight: 900, fontSize: 13, color: "white" }}>TOTAL</Typography>
-          <Typography sx={{ fontWeight: 900, fontSize: 18, color: "white" }}>{formatCurrency(total)}</Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, pt: 1.5, borderTop: "1px solid #e2e8f0" }}>
+          <Typography sx={{ fontWeight: 900, fontSize: 15, color: "#0a2540" }}>
+            Total
+          </Typography>
+          <Typography sx={{ fontWeight: 900, fontSize: 18, color: "#16a34a" }}>
+            {formatCurrency(total)}
+          </Typography>
         </Box>
 
-        {insufficientBalance && !error && (
-          <Alert severity="warning" sx={{ mt: 1.5, fontSize: 13 }}>
-            Saldo insuficiente. Disponible: {formatCurrency(selectedStudent!.balance)}. El estudiante quedará con deuda de {formatCurrency(total - selectedStudent!.balance)}.
-          </Alert>
-        )}
-        {error && <Alert severity="error" sx={{ mt: 1.5 }} onClose={() => setError(null)}>{error}</Alert>}
-
-        <Stack direction="row" spacing={1.5} sx={{ mt: 2, justifyContent: "flex-end" }}>
-          <Button variant="contained" color="inherit" onClick={() => setConfirmOpen(false)} disabled={submitting} sx={{ fontWeight: 700 }}>Cancelar</Button>
+        <Stack direction="row" spacing={1.5} sx={{ mt: 2.5, justifyContent: "flex-end" }}>
+          <Button
+            onClick={() => setConfirmOpen(false)}
+            disabled={submitting}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            Cancelar
+          </Button>
           <Button
             variant="contained"
-            disabled={cart.length === 0 || submitting}
             onClick={handleCobrar}
-            sx={{ bgcolor: "#22c55e", "&:hover": { bgcolor: "#16a34a" }, fontWeight: 900 }}
+            disabled={submitting || cart.length === 0}
+            sx={{ bgcolor: "#22c55e", "&:hover": { bgcolor: "#16a34a" }, textTransform: "none", fontWeight: 800 }}
           >
             {submitting ? <CircularProgress size={18} color="inherit" /> : "Confirmar"}
           </Button>
