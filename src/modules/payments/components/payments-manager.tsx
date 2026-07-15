@@ -25,6 +25,7 @@ import Typography from "@mui/material/Typography";
 import { useState, useMemo, useRef, useEffect } from "react";
 
 import { formatCurrency } from "@/lib/currency";
+import { normalizeText } from "@/lib/text";
 import { studentTypeLabels } from "@/modules/students/schemas/student.schema";
 import type { StudentDto, StudentType } from "@/modules/students/schemas/student.schema";
 import type { PaymentDto } from "../services/payment.service";
@@ -68,10 +69,10 @@ export function PaymentsManager({ students, initialPayments }: Props) {
   const inputRef = useRef<HTMLDivElement>(null);
 
   const filteredStudents = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = normalizeText(query.trim());
     if (!q) return [];
     return students
-      .filter((s) => s.isActive && s.name.toLowerCase().includes(q))
+      .filter((s) => s.isActive && normalizeText(s.name).includes(q))
       .slice(0, 6);
   }, [students, query]);
 

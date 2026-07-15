@@ -35,7 +35,7 @@ export async function authorizeAdmin(): Promise<NextResponse | null> {
  * Lee el token de las cookies y retorna el usuario de sesión.
  * Para usar en Server Components (páginas) — nunca en API routes.
  */
-export async function getSessionUser(): Promise<{ userId: string; role: string; name: string } | null> {
+export async function getSessionUser(): Promise<{ userId: string; role: string; name: string; canEnterConsumption: boolean } | null> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
     if (!token) return null;
@@ -45,7 +45,7 @@ export async function getSessionUser(): Promise<{ userId: string; role: string; 
     const userId = session["userId"] as string;
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { name: true, role: true },
+        select: { name: true, role: true, canEnterConsumption: true },
     });
     if (!user) return null;
 
@@ -53,6 +53,7 @@ export async function getSessionUser(): Promise<{ userId: string; role: string; 
         userId,
         role: user.role,
         name: user.name,
+        canEnterConsumption: user.canEnterConsumption,
     };
 }
 

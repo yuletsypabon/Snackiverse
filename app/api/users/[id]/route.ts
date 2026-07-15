@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authorizeAdmin } from "@/lib/api-auth";
-import { updateVendorPassword } from "@/modules/vendors/services/vendor.service";
+import { updateVendorPassword, setVendorConsumption } from "@/modules/vendors/services/vendor.service";
 
 const changePasswordSchema = z.object({
     password: z.string().min(6, "Mínimo 6 caracteres"),
@@ -21,10 +21,15 @@ export async function PATCH(
 
         const { id } = await params;
         const body = await req.json();
+
+        // Toggle de "ingresar consumo" (no requiere contraseña)
+        if (typeof body.canEnterConsumption === "boolean") {
+            await setVendorConsumption(id, body.canEnterConsumption);
+            return NextResponse.json({ success: true });
+        }
+
         const validated = changePasswordSchema.parse(body);
-
         await updateVendorPassword(id, validated.password);
-
         return NextResponse.json({ success: true });
     } catch (error) {
         if (error instanceof z.ZodError) {

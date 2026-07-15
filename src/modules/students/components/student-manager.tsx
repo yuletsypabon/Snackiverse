@@ -43,6 +43,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 
 import { formatCurrency } from "@/lib/currency";
+import { normalizeText } from "@/lib/text";
 import {
     studentTypeLabels,
     studentTypesSchema,
@@ -146,11 +147,11 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
     const availableGradeFilters = generateGradeFilters();
 
     const filteredStudents = students.filter((student) => {
-        const normalizedQuery = query.trim().toLowerCase();
+        const normalizedQuery = normalizeText(query.trim());
         const matchesQuery =
             !normalizedQuery ||
-            student.name.toLowerCase().includes(normalizedQuery) ||
-            student.grade.toLowerCase().includes(normalizedQuery);
+            normalizeText(student.name).includes(normalizedQuery) ||
+            normalizeText(student.grade).includes(normalizedQuery);
         const matchesGrade = gradeFilter === "Todos" || student.grade === gradeFilter;
         return matchesQuery && matchesGrade;
     });
@@ -233,9 +234,10 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                 name: form.name,
                 grade: form.grade,
                 type: form.type,
-                balance: form.balance,
                 restrictionTagIds: form.restrictionTagIds,
                 guardianWhatsapp: form.guardianWhatsapp,
+                // El saldo solo se define al crear; al editar no se toca.
+                ...(isEditing ? {} : { balance: form.balance }),
             };
 
             const response = await fetch(
@@ -658,6 +660,8 @@ export function StudentManager({ initialStudents, initialTags = [] }: StudentMan
                                     value={form.balance}
                                     onChange={(e) => updateForm("balance", e.target.value)}
                                     slotProps={{ htmlInput: { min: 0, step: 100 } }}
+                                    disabled={Boolean(editingId)}
+                                    helperText={editingId ? "El saldo se ajusta con Recargas y Pagos, no aquí." : undefined}
                                     fullWidth
                                 />
                             )}

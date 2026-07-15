@@ -28,6 +28,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import { useState } from "react";
 
 import { formatCurrency } from "@/lib/currency";
+import { normalizeText } from "@/lib/text";
 import { resolveProductEmoji } from "../constants/product-icons";
 import type {
   ProductCategoryDto,
@@ -64,7 +65,7 @@ export function ProductTable({ initialProducts, categories, tags: initialTags }:
   const [query, setQuery] = useState("");
 
   const visibleProducts = query.trim()
-    ? products.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase()))
+    ? products.filter((p) => normalizeText(p.name).includes(normalizeText(query)))
     : products;
   const [notice, setNotice] = useState<NoticeState>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);

@@ -16,6 +16,8 @@ import Menu from "@mui/material/Menu";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import InputAdornment from "@mui/material/InputAdornment";
+import SearchIcon from "@mui/icons-material/Search";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -38,6 +40,7 @@ import Typography from "@mui/material/Typography";
 import { useState, useCallback, useEffect, type MouseEvent } from "react";
 
 import { formatCurrency } from "@/lib/currency";
+import { normalizeText } from "@/lib/text";
 
 type SaleRow = {
   saleId: string;
@@ -94,6 +97,7 @@ export function VentasDetalladas() {
   const [from, setFrom] = useState(daysAgoInput(7));
   const [to, setTo] = useState(todayInput());
   const [rows, setRows] = useState<SaleRow[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -168,7 +172,11 @@ export function VentasDetalladas() {
   }, []);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const totalGeneral = rows.reduce((s, r) => s + r.subtotal, 0);
+  const q = normalizeText(search);
+  const visibleRows = q
+    ? rows.filter((r) => normalizeText(r.studentName).includes(q) || normalizeText(r.productName).includes(q))
+    : rows;
+  const totalGeneral = visibleRows.reduce((s, r) => s + r.subtotal, 0);
 
   return (
     <Stack spacing={2.5}>
@@ -197,9 +205,31 @@ export function VentasDetalladas() {
 
       {loaded && (
         <Paper elevation={0} sx={{ borderRadius: 2, overflow: "hidden" }}>
+          <Box sx={{ p: 2, borderBottom: "1px solid #f1f5f9" }}>
+            <TextField
+              placeholder="Buscar por estudiante o producto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              size="small"
+              fullWidth
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" sx={{ color: "#94a3b8" }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Box>
           {rows.length === 0 ? (
             <Typography sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
               Sin ventas en este período.
+            </Typography>
+          ) : visibleRows.length === 0 ? (
+            <Typography sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
+              Sin resultados para la búsqueda.
             </Typography>
           ) : (
             <>
@@ -214,7 +244,7 @@ export function VentasDetalladas() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {rows.map((r, i) => (
+                    {visibleRows.map((r, i) => (
                       <TableRow key={`${r.saleId}-${i}`} hover>
                         <TableCell sx={{ fontSize: 12, color: "#64748b", whiteSpace: "nowrap" }}>{formatDate(r.createdAt)}</TableCell>
                         <TableCell sx={{ fontWeight: 700, fontSize: 13 }}>{r.studentName}</TableCell>

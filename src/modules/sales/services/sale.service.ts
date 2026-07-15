@@ -136,3 +136,58 @@ export async function deleteSale(saleId: string): Promise<void> {
     await tx.sale.delete({ where: { id: saleId } });
   });
 }
+
+
+/**
+ * Registra una "venta de consumo": un monto directo sin productos. Afecta el saldo
+ * igual que una venta normal (el prepago decrementa; tiquetera solo se registra).
+ * El historial de consumo (las ventas) queda igual; esta es una venta sin ítems.
+ */
+export async function createConsumptionSale(
+  studentId: string,
+  amount: number,
+  vendorId: string
+): Promise<SaleDto> {
+  const sale = await prisma.$transaction(async (tx) => {
+    const student = await tx.student.findUnique({
+      where: { id: studentId },
+      select: { type: true, isActive: true },
+    });
+
+    if (!student) throw new Error("Estudiante no encontrado.");
+    if (!student.isActive) throw new Error("El estudiante está inactivo.");
+
+    if (student.type === "prepaid") {
+      await tx.student.update({
+        where: { id: studentId },
+        data: { balance: { decrement: amount } },
+      });
+    }
+
+    return tx.sale.create({
+      data: {
+        studentId,
+        vendorId,
+        total: amount,
+      },
+      select: {
+        id: true,
+        studentId: true,
+        vendorId: true,
+        total: true,
+        createdAt: true,
+        vendor: { select: { name: true } },
+      },
+    });
+  });
+
+  return {
+    id: sale.id,
+    studentId: sale.studentId,
+    vendorId: sale.vendorId,
+    vendorName: sale.vendor.name,
+    total: sale.total,
+    createdAt: sale.createdAt.toISOString(),
+    items: [],
+  };
+}

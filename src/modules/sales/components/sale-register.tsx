@@ -33,6 +33,8 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -41,6 +43,7 @@ import { formatCurrency } from "@/lib/currency";
 import { resolveProductEmoji } from "@/modules/products/constants/product-icons";
 import type { ProductDto, ProductCategoryDto } from "@/modules/products/schemas/product.schema";
 import type { StudentDto } from "@/modules/students/schemas/student.schema";
+import { normalizeText } from "@/lib/text";
 
 function ProductIcon({ iconId, size }: { iconId: string | null; size: number }) {
   const emoji = resolveProductEmoji(iconId);
@@ -60,14 +63,205 @@ type CartItem = {
   icon: string | null;
 };
 
+function ConsumptionMode({
+  students,
+  onSwitchToSale,
+}: {
+  students: StudentDto[];
+  onSwitchToSale: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selected, setSelected] = useState<StudentDto | null>(null);
+  const [amount, setAmount] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
+
+  const filtered = useMemo(() => {
+    const q = normalizeText(query.trim());
+    if (!q) return [];
+    return students.filter((st) => st.isActive && normalizeText(st.name).includes(q)).slice(0, 6);
+  }, [students, query]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (inputRef.current && !inputRef.current.contains(e.target as Node)) setShowDropdown(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  async function submit() {
+    setError(null);
+    setSuccess(null);
+    if (!selected) { setError("Selecciona un estudiante."); return; }
+    const amt = parseInt(amount, 10);
+    if (!amt || amt <= 0) { setError("El monto debe ser mayor a 0."); return; }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/sales/consumption", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: selected.id, amount: amt }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "No se pudo registrar el consumo."); return; }
+      setSuccess(`Consumo de ${formatCurrency(amt)} registrado para ${selected.name}.`);
+      setSelected(null);
+      setQuery("");
+      setAmount("");
+    } catch {
+      setError("Error de conexión.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+        <PointOfSaleOutlinedIcon sx={{ fontSize: 24, color: "#0a2540" }} />
+        <Typography variant="h5" sx={{ fontWeight: 900, color: "#0a2540" }}>Registrar Venta</Typography>
+      </Stack>
+
+      <ToggleButtonGroup
+        value="consumption"
+        exclusive
+        size="small"
+        color="primary"
+        onChange={(_, v) => { if (v === "sale") onSwitchToSale(); }}
+        sx={{
+          alignSelf: "flex-start",
+          bgcolor: "#f8fafc",
+          border: "1px solid #cbd5e1",
+          borderRadius: 2,
+          p: 0.5,
+          boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.06)",
+        }}
+      >
+        <ToggleButton
+          value="sale"
+          sx={{
+            fontWeight: 800,
+            px: 2.2,
+            py: 1,
+            borderRadius: 1.5,
+            textTransform: "none",
+            color: "#475569",
+            "&.Mui-selected": {
+              bgcolor: "#0f172a",
+              color: "#fff",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.2)",
+            },
+            "&.Mui-selected:hover": { bgcolor: "#0f172a" },
+          }}
+        >
+          Venta
+        </ToggleButton>
+        <ToggleButton
+          value="consumption"
+          sx={{
+            fontWeight: 800,
+            px: 2.2,
+            py: 1,
+            borderRadius: 1.5,
+            textTransform: "none",
+            color: "#475569",
+            "&.Mui-selected": {
+              bgcolor: "#0f172a",
+              color: "#fff",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.2)",
+            },
+            "&.Mui-selected:hover": { bgcolor: "#0f172a" },
+          }}
+        >
+          Ingresar consumo
+        </ToggleButton>
+      </ToggleButtonGroup>
+
+      <Paper elevation={0} sx={{ p: 2.5, borderRadius: 2 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#64748b", mb: 1.5 }}>Estudiante</Typography>
+        <Box sx={{ position: "relative", mb: 2.5 }} ref={inputRef}>
+          <TextField
+            placeholder="Buscar estudiante..."
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setShowDropdown(true); }}
+            onFocus={() => setShowDropdown(true)}
+            size="small"
+            fullWidth
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" sx={{ color: "#94a3b8" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          {selected && (
+            <Chip
+              label={`${selected.name} — ${selected.grade}`}
+              onDelete={() => { setSelected(null); setQuery(""); }}
+              sx={{ mt: 1, bgcolor: "#dbeafe", color: "#1d4ed8", fontWeight: 800 }}
+            />
+          )}
+          {showDropdown && filtered.length > 0 && (
+            <Paper elevation={6} sx={{ position: "absolute", top: 40, left: 0, right: 0, zIndex: 20, borderRadius: 2, overflow: "hidden" }}>
+              {filtered.map((st) => (
+                <Box
+                  key={st.id}
+                  onClick={() => { setSelected(st); setQuery(""); setShowDropdown(false); }}
+                  sx={{ px: 2, py: 1.25, cursor: "pointer", "&:hover": { bgcolor: "#f8fafc" }, borderBottom: "1px solid #f1f5f9" }}
+                >
+                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{st.name}</Typography>
+                  <Typography sx={{ fontSize: 12, color: "#64748b" }}>{st.grade}</Typography>
+                </Box>
+              ))}
+            </Paper>
+          )}
+        </Box>
+
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#64748b", mb: 1 }}>Total consumido</Typography>
+        <TextField
+          type="number"
+          placeholder="0"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          slotProps={{ htmlInput: { min: 0, step: 100 } }}
+          size="small"
+          fullWidth
+          sx={{ mb: 2 }}
+        />
+
+        {error && <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError(null)}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 1.5 }} onClose={() => setSuccess(null)}>{success}</Alert>}
+
+        <Button
+          variant="contained"
+          disabled={submitting}
+          onClick={submit}
+          sx={{ bgcolor: "#22c55e", "&:hover": { bgcolor: "#16a34a" }, fontWeight: 900 }}
+        >
+          {submitting ? <CircularProgress size={18} color="inherit" /> : "Registrar consumo"}
+        </Button>
+      </Paper>
+    </Box>
+  );
+}
+
 type Props = {
   products: ProductDto[];
   categories: ProductCategoryDto[];
   students: StudentDto[];
+  role?: string;
+  canEnterConsumption?: boolean;
 };
 
 
-export function SaleRegister({ products, categories, students }: Props) {
+export function SaleRegister({ products, categories, students, role = "vendor", canEnterConsumption = false }: Props) {
   const [studentQuery, setStudentQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<StudentDto | null>(null);
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
@@ -78,6 +272,7 @@ export function SaleRegister({ products, categories, students }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [lastSale, setLastSale] = useState<{ vendorName: string; createdAt: string; total: number; remainingBalance: number | null } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [mode, setMode] = useState<"sale" | "consumption">("sale");
   const studentInputRef = useRef<HTMLDivElement>(null);
 
   const restrictedTagIds = useMemo(
@@ -89,10 +284,10 @@ export function SaleRegister({ products, categories, students }: Props) {
     product.tags.some((t) => restrictedTagIds.has(t.id));
 
   const filteredStudents = useMemo(() => {
-    const q = studentQuery.trim().toLowerCase();
+    const q = normalizeText(studentQuery.trim());
     if (!q) return [];
     return students
-      .filter((s) => s.isActive && s.name.toLowerCase().includes(q))
+      .filter((s) => s.isActive && normalizeText(s.name).includes(q))
       .slice(0, 6);
   }, [students, studentQuery]);
 
@@ -101,8 +296,8 @@ export function SaleRegister({ products, categories, students }: Props) {
       if (!p.isActive) return false;
       if (selectedCategoryId && p.categoryId !== selectedCategoryId) return false;
       if (productQuery) {
-        const q = productQuery.toLowerCase();
-        if (!p.name.toLowerCase().includes(q)) return false;
+        const q = normalizeText(productQuery);
+        if (!normalizeText(p.name).includes(q)) return false;
       }
       return true;
     });
@@ -118,6 +313,8 @@ export function SaleRegister({ products, categories, students }: Props) {
   }, [products]);
 
   const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const canUseConsumption = role === "admin" || canEnterConsumption;
+  const showConsumptionDisabledMessage = role !== "admin" && !canEnterConsumption;
 
   const addToCart = (product: ProductDto) => {
     if (isRestricted(product)) return;
@@ -216,6 +413,10 @@ export function SaleRegister({ products, categories, students }: Props) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  if (canUseConsumption && mode === "consumption") {
+    return <ConsumptionMode students={students} onSwitchToSale={() => setMode("sale")} />;
+  }
+
   return (
     <>
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
@@ -227,6 +428,70 @@ export function SaleRegister({ products, categories, students }: Props) {
           
         </Typography>
       </Stack>
+
+      <ToggleButtonGroup
+        value={mode}
+        exclusive
+        size="small"
+        color="primary"
+        onChange={(_, v) => {
+          if (v === "consumption" && !canUseConsumption) return;
+          if (v) setMode(v as "sale" | "consumption");
+        }}
+        sx={{
+          alignSelf: "flex-start",
+          bgcolor: "#f8fafc",
+          border: "1px solid #cbd5e1",
+          borderRadius: 2,
+          p: 0.5,
+          boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.06)",
+        }}
+      >
+        <ToggleButton
+          value="sale"
+          sx={{
+            fontWeight: 800,
+            px: 2.2,
+            py: 1,
+            borderRadius: 1.5,
+            textTransform: "none",
+            color: "#475569",
+            "&.Mui-selected": {
+              bgcolor: "#0f172a",
+              color: "#fff",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.2)",
+            },
+            "&.Mui-selected:hover": { bgcolor: "#0f172a" },
+          }}
+        >
+          Venta
+        </ToggleButton>
+        <ToggleButton
+          value="consumption"
+          disabled={!canUseConsumption}
+          sx={{
+            fontWeight: 800,
+            px: 2.2,
+            py: 1,
+            borderRadius: 1.5,
+            textTransform: "none",
+            color: "#475569",
+            "&.Mui-selected": {
+              bgcolor: "#0f172a",
+              color: "#fff",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.2)",
+            },
+            "&.Mui-selected:hover": { bgcolor: "#0f172a" },
+          }}
+        >
+          Ingresar consumo
+        </ToggleButton>
+      </ToggleButtonGroup>
+      {showConsumptionDisabledMessage && (
+        <Typography sx={{ mt: 1, fontSize: 12, color: "#64748b" }}>
+          No tienes permiso para ingresar consumo. Verifica que tu usuario vendedor tenga permiso en la configuración.
+        </Typography>
+      )}
 
       {/* ══ BÚSQUEDA DE ESTUDIANTE + PRODUCTO ══ */}
       <Paper elevation={0} sx={{ p: 2.5, borderRadius: 2 }}>
@@ -696,7 +961,6 @@ export function SaleRegister({ products, categories, students }: Props) {
               <TableCell sx={{ fontWeight: 900, fontSize: 11, color: "#64748b" }}>PRODUCTO</TableCell>
               <TableCell align="center" sx={{ fontWeight: 900, fontSize: 11, color: "#64748b" }}>CANT</TableCell>
               <TableCell align="right" sx={{ fontWeight: 900, fontSize: 11, color: "#64748b" }}>SUBTOTAL</TableCell>
-              <TableCell sx={{ width: 32 }} />
             </TableRow>
           </TableHead>
           <TableBody>
@@ -709,63 +973,40 @@ export function SaleRegister({ products, categories, students }: Props) {
                   </Stack>
                 </TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" sx={{ alignItems: "center", justifyContent: "center", gap: 0.5 }}>
-                    <IconButton size="small"
-                      onClick={() => changeQty(item.productId, -1)}
-                      sx={{ width: 22, height: 22, bgcolor: "#f1f5f9", "&:hover": { bgcolor: "#e2e8f0" } }}
-                    >
-                      <RemoveIcon sx={{ fontSize: 12 }} />
-                    </IconButton>
-                    <Typography sx={{ fontWeight: 900, fontSize: 13, minWidth: 20, textAlign: "center" }}>
-                      {item.quantity}
-                    </Typography>
-                    <IconButton size="small"
-                      onClick={() => changeQty(item.productId, 1)}
-                      sx={{ width: 22, height: 22, bgcolor: "#f1f5f9", "&:hover": { bgcolor: "#e2e8f0" } }}
-                    >
-                      <AddIcon sx={{ fontSize: 12 }} />
-                    </IconButton>
-                  </Stack>
+                  <Typography sx={{ fontWeight: 900, fontSize: 13 }}>{item.quantity}</Typography>
                 </TableCell>
                 <TableCell align="right">
-                  <Typography sx={{ fontWeight: 700, fontSize: 13, color: "#16a34a" }}>
+                  <Typography sx={{ fontWeight: 900, fontSize: 13, color: "#16a34a" }}>
                     {formatCurrency(item.price * item.quantity)}
                   </Typography>
-                </TableCell>
-                <TableCell>
-                  <IconButton size="small"
-                    onClick={() => removeFromCart(item.productId)}
-                    sx={{ color: "#e74c3c", "&:hover": { bgcolor: "#fde1dd" } }}
-                  >
-                    <DeleteOutlineIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
 
-        <Divider sx={{ my: 0 }} />
-
-        <Box sx={{ bgcolor: "#0a2540", borderRadius: "0 0 4px 4px", px: 2, py: 1.25, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography sx={{ fontWeight: 900, fontSize: 13, color: "white" }}>TOTAL</Typography>
-          <Typography sx={{ fontWeight: 900, fontSize: 18, color: "white" }}>{formatCurrency(total)}</Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, pt: 1.5, borderTop: "1px solid #e2e8f0" }}>
+          <Typography sx={{ fontWeight: 900, fontSize: 15, color: "#0a2540" }}>
+            Total
+          </Typography>
+          <Typography sx={{ fontWeight: 900, fontSize: 18, color: "#16a34a" }}>
+            {formatCurrency(total)}
+          </Typography>
         </Box>
 
-        {insufficientBalance && !error && (
-          <Alert severity="warning" sx={{ mt: 1.5, fontSize: 13 }}>
-            Saldo insuficiente. Disponible: {formatCurrency(selectedStudent!.balance)}. El estudiante quedará con deuda de {formatCurrency(total - selectedStudent!.balance)}.
-          </Alert>
-        )}
-        {error && <Alert severity="error" sx={{ mt: 1.5 }} onClose={() => setError(null)}>{error}</Alert>}
-
-        <Stack direction="row" spacing={1.5} sx={{ mt: 2, justifyContent: "flex-end" }}>
-          <Button variant="contained" color="inherit" onClick={() => setConfirmOpen(false)} disabled={submitting} sx={{ fontWeight: 700 }}>Cancelar</Button>
+        <Stack direction="row" spacing={1.5} sx={{ mt: 2.5, justifyContent: "flex-end" }}>
+          <Button
+            onClick={() => setConfirmOpen(false)}
+            disabled={submitting}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            Cancelar
+          </Button>
           <Button
             variant="contained"
-            disabled={cart.length === 0 || submitting}
             onClick={handleCobrar}
-            sx={{ bgcolor: "#22c55e", "&:hover": { bgcolor: "#16a34a" }, fontWeight: 900 }}
+            disabled={submitting || cart.length === 0}
+            sx={{ bgcolor: "#22c55e", "&:hover": { bgcolor: "#16a34a" }, textTransform: "none", fontWeight: 800 }}
           >
             {submitting ? <CircularProgress size={18} color="inherit" /> : "Confirmar"}
           </Button>

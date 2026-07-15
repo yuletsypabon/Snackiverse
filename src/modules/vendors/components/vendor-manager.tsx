@@ -23,6 +23,8 @@ import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Typography from "@mui/material/Typography";
 
 import type { VendorDto } from "../schemas/vendor.schema";
@@ -133,6 +135,22 @@ export function VendorManager({ initialVendors }: VendorManagerProps) {
             setNotice({ message: "Error de conexión. Intenta nuevamente.", severity: "error" });
         } finally {
             setIsLoading(false);
+        }
+    }
+
+    async function toggleConsumption(vendor: VendorDto, value: boolean) {
+        setVendors((prev) => prev.map((v) => (v.id === vendor.id ? { ...v, canEnterConsumption: value } : v)));
+        try {
+            const res = await fetch(`/api/users/${vendor.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ canEnterConsumption: value }),
+            });
+            if (!res.ok) throw new Error();
+            setNotice({ message: `Consumo ${value ? "activado" : "desactivado"} para ${vendor.name}.`, severity: "success" });
+        } catch {
+            setVendors((prev) => prev.map((v) => (v.id === vendor.id ? { ...v, canEnterConsumption: !value } : v)));
+            setNotice({ message: "No se pudo actualizar la opción de consumo.", severity: "error" });
         }
     }
 
@@ -341,15 +359,30 @@ export function VendorManager({ initialVendors }: VendorManagerProps) {
                                                 {vendor.email}
                                             </Typography>
                                         </Box>
-                                        <Tooltip title="Cambiar contraseña">
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => openPasswordModal(vendor)}
-                                                sx={{ color: "#6d28d9", ml: 1 }}
-                                            >
-                                                <KeyOutlinedIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
+                                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                                            <Tooltip title="Permitir ingresar consumo (monto directo, sin productos)">
+                                                <FormControlLabel
+                                                    control={
+                                                        <Switch
+                                                            size="small"
+                                                            checked={vendor.canEnterConsumption}
+                                                            onChange={(e) => toggleConsumption(vendor, e.target.checked)}
+                                                        />
+                                                    }
+                                                    label={<Typography sx={{ fontSize: 11, color: "#64748b" }}>Consumo</Typography>}
+                                                    sx={{ m: 0 }}
+                                                />
+                                            </Tooltip>
+                                            <Tooltip title="Cambiar contraseña">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => openPasswordModal(vendor)}
+                                                    sx={{ color: "#6d28d9", ml: 1 }}
+                                                >
+                                                    <KeyOutlinedIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Stack>
                                     </Box>
                                 ))}
                             </Stack>
