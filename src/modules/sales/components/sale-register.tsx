@@ -1,4 +1,5 @@
 "use client";
+import { formatColombia } from "@/lib/datetime";
 
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
@@ -792,7 +793,7 @@ export function SaleRegister({ products, categories, students, role = "vendor", 
                 </Typography>
               </Stack>
               <Typography sx={{ fontSize: 12, color: "#166534" }}>
-                {new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(lastSale.createdAt))}
+                {formatColombia(lastSale.createdAt, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
               </Typography>
               <Typography sx={{ fontSize: 12, color: "#166534" }}>
                 Registrada por: <strong>{lastSale.vendorName}</strong>

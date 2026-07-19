@@ -1,4 +1,5 @@
 "use client";
+import { formatColombia } from "@/lib/datetime";
 
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
@@ -52,10 +53,10 @@ type ReportData = {
 type Props = { students: StudentDto[] };
 
 function toLocalDate(iso: string) {
-  return new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
+  return formatColombia(iso, { day: "numeric", month: "short", year: "numeric" });
 }
 function toLocalTime(iso: string) {
-  return new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+  return formatColombia(iso, { hour: "2-digit", minute: "2-digit" });
 }
 function toInputDate(d: Date) {
   return d.toISOString().split("T")[0];
@@ -687,7 +688,7 @@ export function ReportsManager({ students }: Props) {
   </style>
 </head><body>
   <div class="card"><img src="${dataUrl}" /></div>
-  <p class="footer">Comprobante generado por SnackieVerse · ${new Date().toLocaleDateString("es-CO")}</p>
+  <p class="footer">Comprobante generado por SnackieVerse · ${formatColombia(new Date(), { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
   <p class="footer no-print" style="margin-top:16px; color:#475569;">
     Presiona <strong>Ctrl+P</strong> (o ⌘+P en Mac) y elige <strong>Guardar como PDF</strong>
   </p>

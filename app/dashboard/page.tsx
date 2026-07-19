@@ -26,21 +26,19 @@ import { AdminShell } from "@/modules/dashboard/components/admin-shell";
 import { getDashboardData } from "@/modules/dashboard/services/dashboard.service";
 import { formatCurrency } from "@/lib/currency";
 import { getSessionUser } from "@/lib/api-auth";
+import { formatColombia, formatColombiaDate, formatColombiaTime, startOfTodayColombia } from "@/lib/datetime";
 
 function formatDashboardDate() {
-  return new Intl.DateTimeFormat("es-CO", {
+  return formatColombia(new Date(), {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(new Date());
+  });
 }
 
 function formatDateTime(iso: string) {
-  const d = new Date(iso);
-  const date = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short" }).format(d);
-  const time = new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit" }).format(d);
-  return { date, time };
+  return { date: formatColombiaDate(iso), time: formatColombiaTime(iso) };
 }
 
 export default async function DashboardPage() {
@@ -275,7 +273,7 @@ export default async function DashboardPage() {
                 ) : (
                   <Stack spacing={0}>
                     {data.expiringTiqueteras.map((s, i) => {
-                      const daysLeft = Math.ceil((new Date(s.expiresAt).getTime() - new Date().setHours(0,0,0,0)) / 86400000);
+                      const daysLeft = Math.ceil((new Date(s.expiresAt).getTime() - startOfTodayColombia().getTime()) / 86400000);
                       const urgent = daysLeft <= 2;
                       return (
                         <Box key={s.id}>

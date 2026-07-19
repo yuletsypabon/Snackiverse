@@ -1,4 +1,5 @@
 "use client";
+import { formatColombia } from "@/lib/datetime";
 
 import AddCardOutlinedIcon from "@mui/icons-material/AddCardOutlined";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
@@ -27,10 +28,10 @@ import type { RechargeDto } from "@/modules/recharges/schemas/recharge.schema";
 type Props = { students: StudentDto[] };
 
 function toLocalDateTime(iso: string) {
-  return new Intl.DateTimeFormat("es-CO", {
+  return formatColombia(iso, {
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit",
-  }).format(new Date(iso));
+  });
 }
 
 export function RechargeManager({ students }: Props) {
