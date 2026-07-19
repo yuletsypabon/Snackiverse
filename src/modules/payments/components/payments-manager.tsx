@@ -1,4 +1,5 @@
 "use client";
+import { formatColombia } from "@/lib/datetime";
 
 import AccountBalanceOutlinedIcon from "@mui/icons-material/AccountBalanceOutlined";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
@@ -48,10 +49,10 @@ const METHOD_COLORS: Record<string, { bg: string; color: string }> = {
 };
 
 function formatDateTime(iso: string) {
-  return new Intl.DateTimeFormat("es-CO", {
+  return formatColombia(iso, {
     weekday: "short", day: "numeric", month: "short",
     hour: "2-digit", minute: "2-digit",
-  }).format(new Date(iso));
+  });
 }
 
 export function PaymentsManager({ students, initialPayments }: Props) {

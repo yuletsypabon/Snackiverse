@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import { startOfTodayColombia } from "@/lib/datetime";
 
 const LOW_BALANCE_THRESHOLD = 5000;
 
 export async function getDashboardData() {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = startOfTodayColombia();
 
   const [
     salesToday,
